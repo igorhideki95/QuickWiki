@@ -8,6 +8,15 @@ Igor Hideki (`@IgorDev`) e o criador e responsavel principal pelo QuickWiki,
 atuando como idealizador, owner de produto, direcao tecnica e gestao da
 evolucao do projeto.
 
+## QuickBrain
+
+Este repositorio se conecta ao `QuickBrain` local em `C:\IgorDev\QuickBrain`.
+
+O `QuickBrain` serve como memoria operacional da workspace: identidade,
+portfolio, publish state, decisoes transversais e aprendizado continuo. Sempre
+que o papel do QuickWiki no portfolio mudar, esse contexto deve ser resumido la
+de forma curta e cumulativa.
+
 ## Caminho recomendado
 
 O projeto agora possui uma GUI local chamada `QuickWiki Studio`, pensada para facilitar onboarding, operação básica e acompanhamento visual de crawls.

@@ -1,0 +1,52 @@
+{
+  "key": "tibia_fandom",
+  "label": "Tibia Fandom",
+  "description": "Perfil para wikis baseadas em Fandom/Wikia usando estrutura MediaWiki com componentes extras.",
+  "default_seed_url": "https://tibia.fandom.com/wiki/TibiaWiki",
+  "allowed_domains": [
+    "tibia.fandom.com"
+  ],
+  "allowed_path_prefix": "/wiki/",
+  "api_path": "/api.php",
+  "title_selectors": [
+    "h1#firstHeading",
+    ".page-header__title",
+    "h1.firstHeading",
+    "h1"
+  ],
+  "content_root_selectors": [
+    "#mw-content-text .mw-parser-output",
+    ".main-container .mw-parser-output",
+    ".page-content .mw-parser-output",
+    "main .mw-parser-output",
+    "main"
+  ],
+  "category_selectors": [
+    "#mw-normal-catlinks a",
+    ".catlinks a",
+    ".page-footer__categories a",
+    ".category-page__member-link"
+  ],
+  "extra_noise_selectors": [
+    ".global-navigation",
+    ".wds-global-footer",
+    ".page-header__actions",
+    ".page-header__bottom",
+    ".page-side-tools",
+    ".right-rail-wrapper",
+    ".comments",
+    ".article-comments",
+    ".fandom-sticky-header",
+    ".portable-infobox .pi-edit",
+    ".mw-editsection-like",
+    ".license-description",
+    ".is-loading",
+    ".page__right-rail"
+  ],
+  "theme": {
+    "accent": "#0f5c7a",
+    "accent_soft": "#d6eef5",
+    "link": "#15567e",
+    "panel": "rgba(248, 252, 255, 0.94)"
+  }
+}

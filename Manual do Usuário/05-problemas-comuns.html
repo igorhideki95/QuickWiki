@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>QuickWiki — Problemas Comuns</title>
+  <link rel="stylesheet" href="manual.css">
+</head>
+<body>
+  <div class="manual-bg"></div>
+  <main class="chapter-shell">
+    <div class="chapter-topbar">
+      <a class="nav-pill" href="index.html">Voltar ao Manual</a>
+      <a class="nav-pill" href="05 - Problemas Comuns.md">Abrir versão Markdown</a>
+    </div>
+
+    <header class="chapter-head">
+      <span class="eyebrow">Capítulo 05</span>
+      <h1>Problemas Comuns</h1>
+      <p class="chapter-lead">Use este capítulo como referência rápida quando algo sair do esperado durante a instalação, execução ou navegação do espelho.</p>
+    </header>
+
+    <article class="chapter-body">
+      <h2>O comando não roda</h2>
+      <p>Verifique:</p>
+      <ul>
+        <li>Se você está na pasta correta do projeto.</li>
+        <li>Se o Python está disponível no terminal.</li>
+        <li>Se as dependências foram instaladas com `pip install -r requirements.txt`.</li>
+      </ul>
+
+      <h2>A validação de perfis falha</h2>
+      <p>Rode:</p>
+      <pre><code>python run_scraper.py --validate-site-profiles</code></pre>
+      <p>Se houver erro, revise:</p>
+      <ul>
+        <li>`key`</li>
+        <li>`default_seed_url`</li>
+        <li>`allowed_domains`</li>
+        <li>Seletores e campos do `theme`</li>
+      </ul>
+
+      <h2>O crawl não encontrou conteúdo suficiente</h2>
+      <p>Tente:</p>
+      <ul>
+        <li>Confirmar se o perfil está correto.</li>
+        <li>Usar `--site-profile` explicitamente.</li>
+        <li>Testar primeiro com `--max-pages 25`.</li>
+        <li>Verificar `output/logs/scraper.log`.</li>
+      </ul>
+
+      <h2>O resultado foi criado, mas não abre bem no navegador</h2>
+      <p>Use o modo servidor em vez de abrir arquivos soltos:</p>
+      <pre><code>python run_scraper.py --serve-only --output-dir output</code></pre>
+
+      <h2>Quero reiniciar tudo do zero</h2>
+      <p>Use:</p>
+      <pre><code>python run_scraper.py --fresh</code></pre>
+
+      <h2>Quero apenas inspecionar os perfis e parar</h2>
+      <p>Use:</p>
+      <pre><code>python run_scraper.py --list-site-profiles
+python run_scraper.py --validate-site-profiles</code></pre>
+
+      <h2>Quando procurar os logs</h2>
+      <p>Confira `output/logs/scraper.log` quando:</p>
+      <ul>
+        <li>A execução para no meio.</li>
+        <li>O número de páginas salvas parece muito baixo.</li>
+        <li>O servidor local funciona, mas o conteúdo ficou incompleto.</li>
+      </ul>
+
+      <h2>Fechamento</h2>
+      <p>Se o uso básico já estiver funcionando, o próximo passo natural é repetir o fluxo com:</p>
+      <ul>
+        <li>Outro perfil.</li>
+        <li>Outra seed.</li>
+        <li>Um `max-pages` maior.</li>
+        <li>Ou um crawl completo.</li>
+      </ul>
+    </article>
+
+    <div class="chapter-note">
+      <strong>Encerramento da trilha</strong>
+      <p>Você já tem o fluxo básico completo. A partir daqui, vale voltar ao índice do manual ou consultar a documentação técnica para aprofundar.</p>
+    </div>
+
+    <nav class="chapter-nav">
+      <div class="nav-group">
+        <a class="nav-pill" href="04-navegacao-offline.html">Anterior: Navegação Offline</a>
+      </div>
+      <div class="nav-group">
+        <a class="nav-pill" href="index.html">Voltar ao Índice</a>
+      </div>
+    </nav>
+  </main>
+</body>
+</html>

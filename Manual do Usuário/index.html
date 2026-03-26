@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>QuickWiki — Manual do Usuário</title>
+  <link rel="stylesheet" href="manual.css">
+</head>
+<body>
+  <div class="manual-bg"></div>
+  <main class="manual-shell">
+    <section class="hero">
+      <div class="hero-copy">
+        <span class="eyebrow">Manual do Usuário</span>
+        <h1>QuickWiki</h1>
+        <p class="lead">
+          Um guia visual, direto e bem organizado para instalar, validar, abrir a GUI local, rodar o primeiro espelho e navegar no resultado offline.
+        </p>
+        <div class="hero-actions">
+          <a class="button primary" href="01-instalacao.html">Começar pelo início</a>
+          <a class="button secondary" href="06-gui-studio.html">Ver capítulo da GUI</a>
+        </div>
+      </div>
+      <aside class="hero-panel">
+        <div class="stat-card">
+          <strong>6 capítulos</strong>
+          <span>Da preparação inicial até o uso do QuickWiki Studio e a solução de problemas.</span>
+        </div>
+        <div class="stat-card">
+          <strong>Fluxo recomendado</strong>
+          <span>Validar perfis, abrir a GUI, rodar uma amostra pequena e revisar o espelho.</span>
+        </div>
+        <div class="command-card">
+          <small>Fluxo rápido</small>
+          <pre><code>python -m pip install -r requirements.txt
+python run_scraper.py --validate-site-profiles
+python run_scraper.py --gui</code></pre>
+        </div>
+      </aside>
+    </section>
+
+    <section class="section-header">
+      <span class="eyebrow">Trilha Guiada</span>
+      <h2>Passo a passo recomendado</h2>
+      <p>Se estiver começando agora, leia as etapas abaixo na ordem. A GUI local já entra como parte oficial da experiência do produto.</p>
+    </section>
+
+    <section class="card-grid">
+      <a class="guide-card accent-1" href="01-instalacao.html">
+        <span class="step">01</span>
+        <h3>Instalação e Preparação</h3>
+        <p>Ambiente, dependências, ajuda da CLI e validação inicial dos perfis.</p>
+      </a>
+      <a class="guide-card accent-2" href="06-gui-studio.html">
+        <span class="step">GUI</span>
+        <h3>QuickWiki Studio</h3>
+        <p>Como abrir a GUI local, preencher a tela e usar os atalhos visuais.</p>
+      </a>
+      <a class="guide-card accent-3" href="02-primeiro-espelho.html">
+        <span class="step">02</span>
+        <h3>Primeiro Espelho</h3>
+        <p>Execução segura com amostra pequena, verificação da saída e primeira revisão.</p>
+      </a>
+      <a class="guide-card accent-4" href="03-perfis-validacao-modos.html">
+        <span class="step">03</span>
+        <h3>Perfis, Validação e Modos</h3>
+        <p>Como listar perfis, validar configurações e usar os modos mais úteis.</p>
+      </a>
+      <a class="guide-card accent-5" href="04-navegacao-offline.html">
+        <span class="step">04</span>
+        <h3>Navegação Offline</h3>
+        <p>Onde estão os arquivos certos e como abrir o espelho da forma correta.</p>
+      </a>
+      <a class="guide-card accent-2" href="05-problemas-comuns.html">
+        <span class="step">05</span>
+        <h3>Problemas Comuns</h3>
+        <p>Checklist de diagnóstico rápido para os erros mais frequentes do uso básico.</p>
+      </a>
+    </section>
+
+    <section class="two-column">
+      <article class="panel">
+        <span class="eyebrow">Antes de Rodar</span>
+        <h2>Checklist rápido</h2>
+        <ul class="check-list">
+          <li>Você está dentro da pasta do projeto.</li>
+          <li>As dependências foram instaladas com `pip`.</li>
+          <li>`python run_scraper.py --help` funciona.</li>
+          <li>`python run_scraper.py --validate-site-profiles` retorna sucesso.</li>
+          <li>`python run_scraper.py --gui` abre a interface local.</li>
+        </ul>
+      </article>
+
+      <article class="panel">
+        <span class="eyebrow">Dica Prática</span>
+        <h2>Primeiro caminho ideal</h2>
+        <p>
+          O melhor começo agora é abrir a GUI local depois da validação de perfis. Ela reduz a fricção operacional,
+          deixa os parâmetros mais visíveis e facilita a navegação entre logs, resumo e espelho gerado.
+        </p>
+      </article>
+    </section>
+
+    <section class="footer-strip">
+      <div>
+        <strong>Entrada principal do manual</strong>
+        <p>Use esta página como índice visual e os arquivos `.md` como apoio textual capítulo a capítulo.</p>
+      </div>
+      <a class="button primary" href="README.md">Abrir índice em Markdown</a>
+    </section>
+  </main>
+</body>
+</html>

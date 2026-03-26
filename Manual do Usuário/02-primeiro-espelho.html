@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>QuickWiki — Primeiro Espelho</title>
+  <link rel="stylesheet" href="manual.css">
+</head>
+<body>
+  <div class="manual-bg"></div>
+  <main class="chapter-shell">
+    <div class="chapter-topbar">
+      <a class="nav-pill" href="index.html">Voltar ao Manual</a>
+      <a class="nav-pill" href="02 - Primeiro Espelho.md">Abrir versão Markdown</a>
+    </div>
+
+    <header class="chapter-head">
+      <span class="eyebrow">Capítulo 02</span>
+      <h1>Primeiro Espelho</h1>
+      <p class="chapter-lead">Faça a primeira execução de forma segura, com uma amostra pequena e sinais claros de que a saída está correta.</p>
+    </header>
+
+    <article class="chapter-body">
+      <h2>Objetivo</h2>
+      <p>Fazer a primeira execução de forma segura, rápida e fácil de verificar.</p>
+
+      <h2>Recomendação</h2>
+      <p>Na primeira vez, use um crawl pequeno. Isso ajuda a confirmar:</p>
+      <ul>
+        <li>Se a rede está funcionando.</li>
+        <li>Se o perfil escolhido está correto.</li>
+        <li>Se a saída está sendo criada no lugar esperado.</li>
+      </ul>
+
+      <h2>Passo 1 — Rodar uma execução de amostra</h2>
+      <pre><code>python run_scraper.py --max-pages 25 --workers 6 --rate-limit 2</code></pre>
+
+      <h2>O que esse comando faz</h2>
+      <ul>
+        <li>Limita a captura a 25 páginas.</li>
+        <li>Usa 6 workers.</li>
+        <li>Mantém um ritmo moderado de requisições.</li>
+        <li>Grava a saída em `output/`.</li>
+      </ul>
+
+      <h2>Passo 2 — Verificar a pasta de saída</h2>
+      <p>Depois da execução, confira se foram criados:</p>
+      <ul>
+        <li>`output/index.html`</li>
+        <li>`output/admin/index.html`</li>
+        <li>`output/data/indexes/summary.json`</li>
+        <li>`output/logs/scraper.log`</li>
+      </ul>
+
+      <h2>Passo 3 — Servir a saída localmente</h2>
+      <pre><code>python run_scraper.py --serve-only --output-dir output</code></pre>
+      <p>Depois abra:</p>
+      <ul>
+        <li>`http://127.0.0.1:8765/index.html`</li>
+      </ul>
+
+      <h2>Quando partir para um crawl maior</h2>
+      <p>Depois que a execução de amostra funcionar bem, você pode usar:</p>
+      <pre><code>python run_scraper.py --workers 8 --rate-limit 2</code></pre>
+
+      <h2>Checklist rápido</h2>
+      <ul>
+        <li>Amostra executada sem erro.</li>
+        <li>Pasta `output/` criada.</li>
+        <li>Home offline acessível no navegador.</li>
+      </ul>
+    </article>
+
+    <div class="chapter-note">
+      <strong>Próximo passo</strong>
+      <p>Depois do primeiro espelho, vale entender melhor os perfis, os modos de execução e como controlar o comportamento do sistema.</p>
+    </div>
+
+    <nav class="chapter-nav">
+      <div class="nav-group">
+        <a class="nav-pill" href="01-instalacao.html">Anterior: Instalação</a>
+      </div>
+      <div class="nav-group">
+        <a class="nav-pill" href="03-perfis-validacao-modos.html">Próximo: Perfis, Validação e Modos</a>
+      </div>
+    </nav>
+  </main>
+</body>
+</html>

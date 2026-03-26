@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>QuickWiki — Perfis, Validação e Modos</title>
+  <link rel="stylesheet" href="manual.css">
+</head>
+<body>
+  <div class="manual-bg"></div>
+  <main class="chapter-shell">
+    <div class="chapter-topbar">
+      <a class="nav-pill" href="index.html">Voltar ao Manual</a>
+      <a class="nav-pill" href="03 - Perfis, Validação e Modos.md">Abrir versão Markdown</a>
+    </div>
+
+    <header class="chapter-head">
+      <span class="eyebrow">Capítulo 03</span>
+      <h1>Perfis, Validação e Modos</h1>
+      <p class="chapter-lead">Aprenda a escolher a wiki certa, validar a configuração e usar os modos mais úteis do QuickWiki no dia a dia.</p>
+    </header>
+
+    <article class="chapter-body">
+      <h2>Objetivo</h2>
+      <p>Entender como escolher a wiki certa e como controlar a forma de execução.</p>
+
+      <h2>Perfis incluídos</h2>
+      <p>O projeto já traz dois perfis:</p>
+      <ul>
+        <li>`tibiawiki_br`</li>
+        <li>`tibia_fandom`</li>
+      </ul>
+
+      <h2>Listar perfis disponíveis</h2>
+      <pre><code>python run_scraper.py --list-site-profiles</code></pre>
+
+      <h2>Validar perfis carregados</h2>
+      <pre><code>python run_scraper.py --validate-site-profiles</code></pre>
+      <p>Use esse comando quando:</p>
+      <ul>
+        <li>Alterar um arquivo em `profiles/`.</li>
+        <li>Adicionar um perfil extra.</li>
+        <li>Quiser confirmar rapidamente que a configuração está íntegra.</li>
+      </ul>
+
+      <h2>Forçar um perfil específico</h2>
+      <pre><code>python run_scraper.py --site-profile tibia_fandom</code></pre>
+
+      <h2>Deixar o sistema detectar automaticamente</h2>
+      <pre><code>python run_scraper.py --site-profile auto --seed-url https://www.tibiawiki.com.br/wiki/Home</code></pre>
+
+      <h2>Carregar perfil extra por arquivo</h2>
+      <pre><code>python run_scraper.py --site-profile-file .\profiles\minha_wiki.json --site-profile minha_wiki</code></pre>
+
+      <h2>Modos úteis no dia a dia</h2>
+      <h3>Retomar execução anterior</h3>
+      <p>Por padrão, o QuickWiki tenta retomar do checkpoint quando ele existe.</p>
+
+      <h3>Ignorar checkpoint e começar do zero</h3>
+      <pre><code>python run_scraper.py --fresh</code></pre>
+
+      <h3>Desativar captura do source wiki</h3>
+      <pre><code>python run_scraper.py --no-source</code></pre>
+
+      <h3>Apenas servir uma saída já existente</h3>
+      <pre><code>python run_scraper.py --serve-only --output-dir output</code></pre>
+
+      <h2>Regra prática</h2>
+      <p>Se você só quer testar:</p>
+      <ul>
+        <li>Valide os perfis.</li>
+        <li>Rode com `--max-pages`.</li>
+        <li>Confira a saída.</li>
+        <li>Só depois faça um crawl maior.</li>
+      </ul>
+    </article>
+
+    <div class="chapter-note">
+      <strong>Próximo passo</strong>
+      <p>Com a execução sob controle, o próximo ponto é saber exatamente onde o QuickWiki grava o espelho e como navegar nele.</p>
+    </div>
+
+    <nav class="chapter-nav">
+      <div class="nav-group">
+        <a class="nav-pill" href="02-primeiro-espelho.html">Anterior: Primeiro Espelho</a>
+      </div>
+      <div class="nav-group">
+        <a class="nav-pill" href="04-navegacao-offline.html">Próximo: Navegação Offline</a>
+      </div>
+    </nav>
+  </main>
+</body>
+</html>

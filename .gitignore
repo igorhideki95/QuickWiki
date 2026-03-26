@@ -1,0 +1,25 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+dist/
+build/
+.venv/
+venv/
+pip-wheel-metadata/
+.ipynb_checkpoints/
+.DS_Store
+
+# Generated mirror data
+output/
+output-*/
+.test-artifacts/
+wiki-web-scrapper-tests-*/
+*.log

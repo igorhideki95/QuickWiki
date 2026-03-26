@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>QuickWiki — QuickWiki Studio</title>
+  <link rel="stylesheet" href="manual.css">
+</head>
+<body>
+  <div class="manual-bg"></div>
+  <main class="chapter-shell">
+    <div class="chapter-topbar">
+      <a class="nav-pill" href="index.html">Voltar ao Manual</a>
+      <a class="nav-pill" href="06 - QuickWiki Studio.md">Abrir versão Markdown</a>
+    </div>
+
+    <header class="chapter-head">
+      <span class="eyebrow">Capítulo 06</span>
+      <h1>QuickWiki Studio</h1>
+      <p class="chapter-lead">Use a GUI local do QuickWiki para operar o sistema com menos atrito, mais contexto visual e atalhos diretos para o espelho gerado.</p>
+    </header>
+
+    <article class="chapter-body">
+      <h2>Objetivo</h2>
+      <p>Apresentar a interface visual oficial do projeto para usuários que preferem uma operação mais guiada.</p>
+
+      <h2>Como abrir</h2>
+      <pre><code>python run_scraper.py --gui</code></pre>
+
+      <p>Se quiser usar outra porta:</p>
+      <pre><code>python run_scraper.py --gui --gui-port 8899</code></pre>
+
+      <h2>O que existe na tela</h2>
+      <ul>
+        <li>estado atual do sistema e resumo do último output;</li>
+        <li>formulário de execução com perfil, seed, pasta de saída e limites principais;</li>
+        <li>descrição do perfil selecionado com seed padrão;</li>
+        <li>configurações avançadas para retries, checkpoint, bootstrap e logs;</li>
+        <li>atalhos para espelho, admin, resumo JSON e manual.</li>
+      </ul>
+
+      <h2>Fluxo recomendado</h2>
+      <ol>
+        <li>Valide os perfis.</li>
+        <li>Escolha o perfil correto.</li>
+        <li>Defina uma amostra pequena com `Max. paginas`.</li>
+        <li>Inicie o crawl e acompanhe os logs.</li>
+        <li>Revise o `exit code` e o resumo.</li>
+        <li>Abra o espelho pelos atalhos da direita.</li>
+      </ol>
+
+      <h2>Observações importantes</h2>
+      <ul>
+        <li>A GUI não substitui o motor do scraper; ela usa o mesmo `run_scraper.py` por trás.</li>
+        <li>Enquanto houver uma execução ativa, a interface bloqueia outra tentativa.</li>
+        <li>O output ativo da tela acompanha a execução mais recente iniciada pela GUI.</li>
+      </ul>
+    </article>
+
+    <div class="chapter-note">
+      <strong>Dica prática</strong>
+      <p>Mesmo com a interface visual pronta, continue começando por crawls pequenos. Isso acelera revisão, reduz retrabalho e deixa a operação mais previsível.</p>
+    </div>
+
+    <nav class="chapter-nav">
+      <div class="nav-group">
+        <a class="nav-pill" href="01-instalacao.html">Voltar: Instalação</a>
+        <a class="nav-pill" href="index.html">Índice do Manual</a>
+      </div>
+      <div class="nav-group">
+        <a class="nav-pill" href="02-primeiro-espelho.html">Próximo: Primeiro Espelho</a>
+      </div>
+    </nav>
+  </main>
+</body>
+</html>

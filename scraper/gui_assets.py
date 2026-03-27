@@ -19,9 +19,9 @@ GUI_INDEX_HTML = """<!doctype html>
         <p class="lead">Configure, valide, acompanhe logs e abra o espelho offline em um fluxo visual unico.</p>
         <div class="hero-links">
           <a class="pill-link" href="/manual/index.html" target="_blank" rel="noreferrer">Manual</a>
-          <a class="pill-link" href="/project/README.md" target="_blank" rel="noreferrer">README</a>
-          <a class="pill-link" href="/project/CHANGELOG.md" target="_blank" rel="noreferrer">Changelog</a>
-          <a class="pill-link" href="/project/DOCUMENTACAO_TECNICA.md" target="_blank" rel="noreferrer">Docs Tecnicas</a>
+          <a class="pill-link" href="/docs/readme" target="_blank" rel="noreferrer">README</a>
+          <a class="pill-link" href="/docs/changelog" target="_blank" rel="noreferrer">Changelog</a>
+          <a class="pill-link" href="/docs/technical-docs" target="_blank" rel="noreferrer">Docs Tecnicas</a>
         </div>
       </div>
       <aside class="hero-side">

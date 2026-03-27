@@ -1,6 +1,7 @@
 # QuickWiki
 
-QuickWiki é um espelhador offline multi-wiki com foco em MediaWiki/Fandom, preparado para crescer sem acoplar a lógica a um único site.
+QuickWiki e um espelhador offline multi-wiki com foco em MediaWiki/Fandom,
+preparado para crescer sem acoplar a logica a um unico site.
 
 ## Ownership
 
@@ -17,9 +18,17 @@ portfolio, publish state, decisoes transversais e aprendizado continuo. Sempre
 que o papel do QuickWiki no portfolio mudar, esse contexto deve ser resumido la
 de forma curta e cumulativa.
 
+## Publication Status
+
+- GitHub visibility: `private`
+- Curadoria atual: baseline privada publicada e sincronizada com o QuickBrain
+- Abertura publica futura: somente apos rodada especifica de showcase e release
+  polish
+
 ## Caminho recomendado
 
-O projeto agora possui uma GUI local chamada `QuickWiki Studio`, pensada para facilitar onboarding, operação básica e acompanhamento visual de crawls.
+O projeto agora possui uma GUI local chamada `QuickWiki Studio`, pensada para
+facilitar onboarding, operacao basica e acompanhamento visual de crawls.
 
 Para abrir a interface:
 
@@ -27,44 +36,46 @@ Para abrir a interface:
 python run_scraper.py --gui
 ```
 
-A GUI sobe localmente por padrão em `http://127.0.0.1:8877`.
+A GUI sobe localmente por padrao em `http://127.0.0.1:8877`.
 
-## Documentação complementar
+## Documentacao complementar
 
-- `DOCUMENTACAO_TECNICA.md`: análise técnica consolidada e arquitetura.
-- `CHANGELOG.md`: histórico organizado das mudanças.
-- `Manual do Usuário/README.md`: índice do manual em Markdown.
-- `Manual do Usuário/index.html`: versão visual e navegável do manual.
+- `DOCUMENTACAO_TECNICA.md`: analise tecnica consolidada e arquitetura
+- `CHANGELOG.md`: historico organizado das mudancas
+- `Manual do Usuario/README.md`: indice do manual em Markdown
+- `Manual do Usuario/index.html`: versao visual e navegavel do manual
 
 ## O que o projeto entrega hoje
 
-- perfis declarativos em JSON para diferentes wikis;
-- auto-detecção por domínio ou escolha explícita de perfil;
-- crawl BFS com bootstrap opcional via MediaWiki API;
-- captura de HTML, Markdown, JSON e wikitext bruto;
-- índices auxiliares para busca offline, backlinks, categorias, duplicados e falhas;
-- frontend offline com assets estáticos, tema por perfil e painel admin;
-- GUI local `QuickWiki Studio` para configurar, validar e acompanhar execuções.
+- perfis declarativos em JSON para diferentes wikis
+- auto-deteccao por dominio ou escolha explicita de perfil
+- crawl BFS com bootstrap opcional via MediaWiki API
+- captura de HTML, Markdown, JSON e wikitext bruto
+- indices auxiliares para busca offline, backlinks, categorias, duplicados e
+  falhas
+- frontend offline com assets estaticos, tema por perfil e painel admin
+- GUI local `QuickWiki Studio` para configurar, validar e acompanhar execucoes
 
 ## Perfis de wiki
 
 Os perfis ficam em `profiles/*.json` e controlam:
 
-- domínios permitidos;
-- seed padrão;
-- caminho da API;
-- seletores de título, conteúdo e categorias;
-- ruído extra a remover;
-- tema visual do espelho.
+- dominios permitidos
+- seed padrao
+- caminho da API
+- seletores de titulo, conteudo e categorias
+- ruido extra a remover
+- tema visual do espelho
 
-Perfis incluídos hoje:
+Perfis incluidos hoje:
 
 - `tibiawiki_br`
 - `tibia_fandom`
 
-Também é possível carregar perfis externos com `--site-profile-file` ou apontar outro diretório com `--profiles-dir`.
+Tambem e possivel carregar perfis externos com `--site-profile-file` ou
+apontar outro diretorio com `--profiles-dir`.
 
-## Instalação
+## Instalacao
 
 ```bash
 cd <diretorio-do-projeto>
@@ -73,7 +84,7 @@ python -m pip install -r requirements.txt
 
 ## Primeiros passos
 
-### Opção A — GUI local
+### Opcao A - GUI local
 
 ```bash
 python run_scraper.py --validate-site-profiles
@@ -82,18 +93,18 @@ python run_scraper.py --gui
 
 Depois disso:
 
-1. valide os perfis pela própria GUI;
-2. rode um crawl pequeno com `--max-pages` configurado na tela;
-3. abra o espelho offline pelos atalhos da interface.
+1. valide os perfis pela propria GUI
+2. rode um crawl pequeno com `--max-pages` configurado na tela
+3. abra o espelho offline pelos atalhos da interface
 
-### Opção B — CLI direta
+### Opcao B - CLI direta
 
 ```bash
 python run_scraper.py --max-pages 25 --workers 6 --rate-limit 2
 python run_scraper.py --serve-only --output-dir output
 ```
 
-## Comandos úteis
+## Comandos uteis
 
 ### Abrir a GUI local
 
@@ -107,13 +118,13 @@ python run_scraper.py --gui
 python run_scraper.py --gui --gui-port 8899
 ```
 
-### Crawl padrão
+### Crawl padrao
 
 ```bash
 python run_scraper.py --workers 8 --rate-limit 2
 ```
 
-### Usar perfil específico
+### Usar perfil especifico
 
 ```bash
 python run_scraper.py --site-profile tibia_fandom
@@ -137,7 +148,7 @@ python run_scraper.py --validate-site-profiles
 python run_scraper.py --site-profile-file .\\profiles\\minha_wiki.json --site-profile minha_wiki
 ```
 
-### Usar outro diretório de perfis
+### Usar outro diretorio de perfis
 
 ```bash
 python run_scraper.py --profiles-dir .\\profiles_custom --site-profile auto
@@ -149,7 +160,7 @@ python run_scraper.py --profiles-dir .\\profiles_custom --site-profile auto
 python run_scraper.py --serve-only --output-dir output
 ```
 
-## Estrutura de saída
+## Estrutura de saida
 
 ```text
 output/
@@ -186,12 +197,16 @@ output/
       url_to_slug.json
 ```
 
-## Observações de operação
+## Observacoes de operacao
 
-- `--site-profile auto` tenta detectar a wiki pela `--seed-url`.
-- `--api-bootstrap-mode auto` só ativa bootstrap completo quando `--max-pages` não é usado.
-- `--retry-failed-passes` é mais útil em crawls completos.
-- O QuickWiki salva links para `action=edit`, `action=raw` e o `.wiki` local quando a wiki permite capturar o source.
-- Abra `output/index.html` para navegar no espelho.
-- Abra `output/admin/index.html` para inspecionar perfil, seletores, tema e atalhos de diagnóstico.
-- Os arquivos em `data/indexes/` foram pensados para consumo por ferramentas externas, IA e futuras telas administrativas.
+- `--site-profile auto` tenta detectar a wiki pela `--seed-url`
+- `--api-bootstrap-mode auto` so ativa bootstrap completo quando `--max-pages`
+  nao e usado
+- `--retry-failed-passes` e mais util em crawls completos
+- o QuickWiki salva links para `action=edit`, `action=raw` e o `.wiki` local
+  quando a wiki permite capturar o source
+- abra `output/index.html` para navegar no espelho
+- abra `output/admin/index.html` para inspecionar perfil, seletores, tema e
+  atalhos de diagnostico
+- os arquivos em `data/indexes/` foram pensados para consumo por ferramentas
+  externas, IA e futuras telas administrativas

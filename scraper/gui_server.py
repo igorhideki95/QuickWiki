@@ -24,6 +24,11 @@ from .site_profiles import WikiSiteProfile, load_site_profiles
 LOGGER_NAME = "quickwiki.scraper"
 VALID_API_BOOTSTRAP_MODES = frozenset({"auto", "always", "off"})
 VALID_LOG_LEVELS = frozenset({"DEBUG", "INFO", "WARNING", "ERROR"})
+GUI_PROJECT_DOCS = {
+    "readme": Path("README.md"),
+    "changelog": Path("CHANGELOG.md"),
+    "technical-docs": Path("DOCUMENTACAO_TECNICA.md"),
+}
 
 
 @dataclass(slots=True)
@@ -365,8 +370,12 @@ class QuickWikiGuiHandler(BaseHTTPRequestHandler):
         if path.startswith("/mirror/"):
             self._serve_from_dir(self.server.app.active_output_dir, path.removeprefix("/mirror/"))
             return
-        if path.startswith("/project/"):
-            self._serve_from_dir(self.server.app.project_root, path.removeprefix("/project/"))
+        if path.startswith("/docs/"):
+            document = resolve_gui_project_doc(self.server.app.project_root, path.removeprefix("/docs/"))
+            if document is None:
+                self.send_error(HTTPStatus.NOT_FOUND, "Documento nao encontrado.")
+                return
+            self._serve_file(document)
             return
 
         self.send_error(HTTPStatus.NOT_FOUND, "Recurso nao encontrado.")
@@ -428,7 +437,9 @@ class QuickWikiGuiHandler(BaseHTTPRequestHandler):
         if safe_path is None or not safe_path.exists() or not safe_path.is_file():
             self.send_error(HTTPStatus.NOT_FOUND, "Arquivo nao encontrado.")
             return
+        self._serve_file(safe_path)
 
+    def _serve_file(self, safe_path: Path) -> None:
         content_type, _ = mimetypes.guess_type(safe_path.name)
         final_content_type = content_type or "application/octet-stream"
         if is_textual_content_type(final_content_type):
@@ -457,6 +468,23 @@ def safe_path_join(base_dir: Path, raw_relative_path: str) -> Path | None:
     try:
         candidate.relative_to(base)
     except ValueError:
+        return None
+    return candidate
+
+
+def resolve_gui_project_doc(project_root: Path, doc_key: str) -> Path | None:
+    relative_path = GUI_PROJECT_DOCS.get(doc_key.strip().lower())
+    if relative_path is None:
+        return None
+
+    candidate = (project_root / relative_path).resolve()
+    base = project_root.resolve()
+    try:
+        candidate.relative_to(base)
+    except ValueError:
+        return None
+
+    if not candidate.exists() or not candidate.is_file():
         return None
     return candidate
 

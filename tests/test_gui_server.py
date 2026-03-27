@@ -8,6 +8,7 @@ from scraper.gui_server import (
     QuickWikiGuiApp,
     build_scraper_subprocess_command,
     normalize_gui_run_request,
+    resolve_gui_project_doc,
     safe_path_join,
 )
 
@@ -98,6 +99,24 @@ class GuiServerTests(unittest.TestCase):
 
         self.assertEqual(safe, nested_file.resolve())
         self.assertIsNone(blocked)
+
+    def test_resolve_gui_project_doc_allows_only_known_documents(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            project_root = Path(tempdir)
+            (project_root / "README.md").write_text("readme", encoding="utf-8")
+            (project_root / "CHANGELOG.md").write_text("changes", encoding="utf-8")
+            (project_root / "DOCUMENTACAO_TECNICA.md").write_text("docs", encoding="utf-8")
+            hidden_dir = project_root / ".git"
+            hidden_dir.mkdir()
+            (hidden_dir / "config").write_text("secret", encoding="utf-8")
+
+            readme = resolve_gui_project_doc(project_root, "readme")
+            hidden = resolve_gui_project_doc(project_root, ".git/config")
+            missing = resolve_gui_project_doc(project_root, "notes")
+
+        self.assertEqual(readme, (project_root / "README.md").resolve())
+        self.assertIsNone(hidden)
+        self.assertIsNone(missing)
 
     def test_gui_app_state_exposes_profiles_with_default_seed(self) -> None:
         project_root = Path(__file__).resolve().parent.parent

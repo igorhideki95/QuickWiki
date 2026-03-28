@@ -1,1 +1,8 @@
 blank_issues_enabled: false
+contact_links:
+  - name: QuickWiki support guide
+    url: https://github.com/igorhideki95/QuickWiki/blob/main/SUPPORT.md
+    about: Start here for setup questions, troubleshooting hints and support expectations.
+  - name: Report a security vulnerability
+    url: https://github.com/igorhideki95/QuickWiki/security/advisories/new
+    about: Use GitHub private vulnerability reporting when available, or follow SECURITY.md for the fallback path.

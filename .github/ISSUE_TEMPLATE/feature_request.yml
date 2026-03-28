@@ -1,5 +1,5 @@
 name: Feature request
-description: Sugira uma melhoria, ajuste de experiência ou nova capacidade para o QuickWiki.
+description: Sugira uma melhoria, ajuste de experiencia ou nova capacidade para o QuickWiki.
 title: "[Feature]: "
 labels:
   - enhancement
@@ -8,20 +8,20 @@ body:
   - type: markdown
     attributes:
       value: |
-        Obrigado pela sugestão. Ideias com bom contexto ajudam muito a manter o projeto evoluindo com foco.
+        Obrigado pela sugestao. Ideias com bom contexto ajudam muito a manter o projeto evoluindo com foco.
   - type: textarea
     id: problem
     attributes:
       label: Problema ou oportunidade
-      description: Qual dor ou limitação esta sugestão resolve?
-      placeholder: Hoje fica difícil...
+      description: Qual dor ou limitacao esta sugestao resolve?
+      placeholder: Hoje fica dificil...
     validations:
       required: true
   - type: textarea
     id: proposal
     attributes:
       label: Proposta
-      description: Descreva a solução que você gostaria de ver.
+      description: Descreva a solucao que voce gostaria de ver.
       placeholder: Eu gostaria que o QuickWiki...
     validations:
       required: true
@@ -35,9 +35,9 @@ body:
     attributes:
       label: Impacto esperado
       description: Quem se beneficia e em qual parte do fluxo?
-      placeholder: Usuários da CLI, da GUI, da documentação...
+      placeholder: Usuarios da CLI, da GUI, da documentacao...
   - type: textarea
     id: extra
     attributes:
       label: Contexto adicional
-      description: Links, referências ou exemplos que ajudem a entender a ideia.
+      description: Links, referencias ou exemplos que ajudem a entender a ideia.

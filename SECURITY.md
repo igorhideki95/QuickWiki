@@ -8,21 +8,33 @@ QuickWiki e uma ferramenta local de crawling e espelhamento offline. O foco atua
 - manter o comportamento local previsivel na GUI e na CLI
 - reduzir riscos de packaging quebrado ou distribuicao inconsistente
 
-O repositorio e publico sob licenca MIT, mas vulnerabilidades devem continuar sendo reportadas com responsabilidade antes de qualquer divulgacao ampla.
+O repositorio e publico sob licenca MIT, mas vulnerabilidades devem ser reportadas com responsabilidade antes de qualquer divulgacao ampla.
 
 ## Como reportar
 
-Se voce identificar uma vulnerabilidade ou um comportamento com risco real:
+Canal preferencial:
+
+- GitHub Private Vulnerability Reporting, quando a interface estiver disponivel: `https://github.com/igorhideki95/QuickWiki/security/advisories/new`
+
+Fallback se o link acima nao estiver disponivel na sua conta:
 
 1. nao abra issue publica com detalhes exploraveis
-2. envie um relato privado ao mantenedor com passos de reproducao claros
+2. abra uma issue publica minima pedindo um canal privado, sem publicar exploit, payload ou passos completos
 3. inclua versao, sistema operacional e impacto observado
 
-## Boas praticas de reporte
+## O que incluir no relato
 
-- informe se o problema depende de `QUICKWIKI_ROOT`
-- diga se o fluxo afetado ocorre em `quickwiki`, `python -m quickwiki` ou `python run_scraper.py`
-- indique se o risco afeta GUI, packaging, docs locais ou artefatos do crawler
+- fluxo afetado: `quickwiki`, `python -m quickwiki` ou `python run_scraper.py`
+- sistema operacional e versao do Python
+- passos minimos de reproducao
+- impacto observado e superficie afetada
+- se o problema depende de `QUICKWIKI_ROOT`, `--profiles-dir` ou outro caminho customizado
+
+## Expectativa de resposta
+
+- confirmacao inicial em ate 7 dias corridos
+- triagem e atualizacoes conforme a severidade e a reproducao
+- divulgacao coordenada apos a mitigacao, quando fizer sentido
 
 ## Fora de escopo
 

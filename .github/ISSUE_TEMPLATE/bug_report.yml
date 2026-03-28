@@ -8,7 +8,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Obrigado por relatar o problema. Quanto mais contexto você trouxer, mais rápido fica investigar.
+        Obrigado por relatar o problema. Quanto mais contexto voce trouxer, mais rapido fica investigar.
   - type: textarea
     id: summary
     attributes:
@@ -21,7 +21,7 @@ body:
     id: steps
     attributes:
       label: Passos para reproduzir
-      description: Liste os passos mínimos para chegar ao problema.
+      description: Liste os passos minimos para chegar ao problema.
       placeholder: |
         1. Execute...
         2. Selecione...
@@ -60,7 +60,7 @@ body:
   - type: input
     id: python
     attributes:
-      label: Versão do Python
+      label: Versao do Python
       placeholder: "3.11.x"
   - type: textarea
     id: logs

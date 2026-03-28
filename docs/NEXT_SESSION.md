@@ -1,22 +1,27 @@
 # NEXT SESSION
 
 Data: 2026-03-28
-Fase: publicacao externa concluida localmente e backlog post-v1
+Fase: repositorio publico no ar, release `v1.0.0` publicada e backlog pos-lancamento aberto
+
+## Nota
+
+Este arquivo e para retomada do mantenedor. Ele nao faz parte do onboarding principal do usuario final.
 
 ## Contexto rapido
 
-O QuickWiki ja tem packaging source-first, GUI local, output offline, contratos publicos versionados, smoke de instalacao com `quickwiki`, fallback por `python -m quickwiki`, crawl curto validado localmente e licenca MIT aplicada para publicacao aberta.
+O QuickWiki ja esta publico no GitHub, sob MIT, com packaging source-first, GUI local, output offline, contratos publicos versionados, smoke de instalacao com `quickwiki`, fallback por `python -m quickwiki`, crawl curto validado localmente e release `v1.0.0` publicada.
 
 ## Fazer primeiro
 
-Registrar a publicacao externa da v1 e seguir para backlog post-v1 sem reabrir contratos publicos.
+Escolher o proximo ganho externo entre homepage ou case study, social preview de release e ampliacao dos perfis oficiais.
 
 ## Tarefas sugeridas
 
-- [ ] registrar a publicacao externa da v1 em `STATUS`, `CHANGELOG` e `DECISIONS`, se surgir alguma decisao estrutural nova
-- [ ] aproveitar a base de `schema_version` e `wiki_family` para abrir a matriz de compatibilidade por familia de wiki
-- [ ] planejar a decomposicao futura de crawler e storage sem quebrar os contratos v1
-- [ ] avaliar melhoria futura para descoberta do `quickwiki` no PATH do Windows sem depender de ajuste manual
+- [ ] publicar uma homepage ou case study externo para o projeto
+- [ ] montar uma matriz de compatibilidade por familia de wiki
+- [ ] ampliar a suite de smoke com mais cenarios de crawl curto
+- [ ] avaliar melhoria futura para descoberta do `quickwiki` no PATH do Windows
+- [ ] produzir assets visuais extras para a proxima release publica
 
 ## Arquivos centrais
 

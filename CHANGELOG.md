@@ -2,15 +2,26 @@
 
 Todas as mudancas relevantes do QuickWiki devem ser registradas aqui de forma objetiva e rastreavel.
 
-## 2026-03-28 - Publicacao MIT e alinhamento final de repositorio publico
+## v1.0.0 - 2026-03-28
+
+Primeira release publica do QuickWiki no GitHub, sob licenca MIT, com packaging validado, docs alinhadas para publico externo e governanca basica do repositorio fechada.
 
 ### Alterado
 
 - `LICENSE` substituida por MIT para abertura publica coerente com o objetivo de portfolio e reuso comunitario
 - `pyproject.toml` atualizado para declarar licenca MIT no pacote
-- `README.md`, `DOCUMENTACAO_TECNICA.md`, `docs/STATUS.md`, `docs/NEXT_SESSION.md` e `docs/ROADMAP.md` alinhados ao modelo publico sob MIT
-- `CONTRIBUTING.md`, `SECURITY.md` e `SUPPORT.md` ajustados para refletir colaboracao e suporte em repositorio aberto
-- `docs/DECISIONS.md` passou a registrar formalmente a decisao de licenciamento MIT
+- `README.md` reestruturado com resumo em ingles, onboarding de 60 segundos, requisito de Python 3.11+ e trilha publica de documentacao
+- `docs/README.md`, `docs/STATUS.md` e `docs/NEXT_SESSION.md` reorganizados para separar onboarding publico de continuidade de mantenedor
+- `CONTRIBUTING.md` alinhado ao fluxo reproduzivel com `python -m pip install -e ".[dev]"`
+- `SECURITY.md` e `SUPPORT.md` atualizados com canais, expectativas e orientacao publica mais clara
+- templates de issue ampliados com suporte dedicado e links publicos de contato
+- `CODEOWNERS` adicionado para explicitar ownership inicial do repositorio
+
+### Publicado
+
+- repositorio publico em `https://github.com/igorhideki95/QuickWiki`
+- descricao e topicos do GitHub refinados para descoberta publica
+- tag e GitHub Release `v1.0.0`
 
 ### Validado
 

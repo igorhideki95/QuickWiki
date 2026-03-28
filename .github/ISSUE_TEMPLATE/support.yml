@@ -1,0 +1,52 @@
+name: Support question
+description: Ask for help with setup, usage, configuration or understanding the QuickWiki flow.
+title: "[Support]: "
+labels:
+  - question
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Obrigado por abrir uma duvida. Antes de enviar, confira README.md, docs/README.md e Manual do Usuario/README.md para os passos mais comuns.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Duvida
+      description: Explique o que voce esta tentando fazer e onde ficou travado.
+      placeholder: Estou tentando rodar o QuickWiki, mas...
+    validations:
+      required: true
+  - type: textarea
+    id: tried
+    attributes:
+      label: O que voce ja tentou
+      description: Liste os passos, comandos ou docs que voce ja consultou.
+      placeholder: Consultei README.md e rodei...
+    validations:
+      required: true
+  - type: input
+    id: command
+    attributes:
+      label: Comando executado
+      description: Cole o comando completo, se houver.
+      placeholder: python -m quickwiki --list-site-profiles
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Sistema operacional
+      options:
+        - Windows
+        - Linux
+        - macOS
+        - Outro
+  - type: input
+    id: python
+    attributes:
+      label: Versao do Python
+      placeholder: "3.11.x"
+  - type: textarea
+    id: extra
+    attributes:
+      label: Contexto adicional
+      description: Inclua logs, mensagens de erro ou qualquer detalhe que ajude.

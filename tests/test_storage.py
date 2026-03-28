@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import json
 import shutil
+import tempfile
 import unittest
-import uuid
 from pathlib import Path
 
 from scraper.models import PageDocument
@@ -14,10 +14,7 @@ from scraper.version import QUICKWIKI_VERSION
 
 class StorageTests(unittest.TestCase):
     def setUp(self) -> None:
-        root = Path.cwd() / ".test-artifacts"
-        root.mkdir(parents=True, exist_ok=True)
-        self.tempdir = root / f"quickwiki-tests-{uuid.uuid4().hex}"
-        self.tempdir.mkdir(parents=True, exist_ok=True)
+        self.tempdir = Path(tempfile.mkdtemp(prefix="quickwiki-tests-"))
         self.storage = StorageManager(self.tempdir)
 
     def tearDown(self) -> None:
@@ -39,8 +36,8 @@ class StorageTests(unittest.TestCase):
             reading_time_minutes=1,
             internal_links=[url_b],
             external_links=["https://example.com/a"],
-            html_clean="<div><p>Conteúdo A</p></div>",
-            markdown="Conteúdo A",
+            html_clean="<div><p>Conteudo A</p></div>",
+            markdown="Conteudo A",
             wikitext="{{Item|name=Teste A}}",
             source_edit_url="https://www.tibiawiki.com.br/index.php?title=Teste_A&action=edit",
             source_raw_url="https://www.tibiawiki.com.br/index.php?title=Teste_A&action=raw",
@@ -57,8 +54,8 @@ class StorageTests(unittest.TestCase):
             word_count=90,
             reading_time_minutes=1,
             internal_links=[url_a],
-            html_clean="<div><p>Conteúdo B</p></div>",
-            markdown="Conteúdo B",
+            html_clean="<div><p>Conteudo B</p></div>",
+            markdown="Conteudo B",
             fetched_at="2026-03-24T00:00:00+00:00",
             content_hash="hash-b",
             fetch_source="mediawiki_api",
@@ -94,11 +91,11 @@ class StorageTests(unittest.TestCase):
         self.assertEqual(summary["quickwiki_version"], QUICKWIKI_VERSION)
 
         html_a = (self.tempdir / self.storage.pages_manifest[slug_a]["paths"]["html"]).read_text(encoding="utf-8")
-        self.assertIn("Links internos", html_a)
-        self.assertIn("Backlinks", html_a)
+        self.assertIn("Links desta pagina", html_a)
+        self.assertIn("Paginas que apontam para ca", html_a)
         self.assertIn("Links externos", html_a)
-        self.assertIn("Código-fonte wiki", html_a)
-        self.assertIn("Ver código fonte", html_a)
+        self.assertIn("Codigo-fonte da wiki", html_a)
+        self.assertIn("Ver texto-fonte na wiki", html_a)
         self.assertIn("Teste B", html_a)
         self.assertIn("example.com/a", html_a)
         self.assertTrue((self.tempdir / self.storage.pages_manifest[slug_a]["paths"]["source"]).exists())
@@ -135,10 +132,10 @@ class StorageTests(unittest.TestCase):
         self.assertEqual(set(reloaded_storage.pages_manifest), {slug_a, slug_b})
 
         admin_html = (self.tempdir / "admin/index.html").read_text(encoding="utf-8")
-        self.assertIn("QuickWiki Admin", admin_html)
-        self.assertIn("Painel do perfil ativo", admin_html)
-        self.assertIn("JSON do perfil", admin_html)
-        self.assertIn("Relatório da execução", admin_html)
+        self.assertIn("Visao tecnica do espelho", admin_html)
+        self.assertIn("Perfil em uso", admin_html)
+        self.assertIn("Diagnostico do perfil", admin_html)
+        self.assertIn("Detalhes da execucao", admin_html)
 
 
 if __name__ == "__main__":

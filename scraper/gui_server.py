@@ -4,6 +4,7 @@ import json
 import logging
 import mimetypes
 import os
+import re
 import shlex
 import subprocess
 import sys
@@ -18,6 +19,7 @@ from typing import Any
 from urllib.parse import unquote, urlparse
 
 from .gui_assets import GUI_CSS, GUI_INDEX_HTML, GUI_JS
+from .presentation import build_feedback_payload, build_gui_exception_payload, format_studio_log, strip_ansi
 from .site_profiles import WikiSiteProfile, load_site_profiles
 from .version import build_product_payload
 
@@ -33,6 +35,20 @@ GUI_PROJECT_DOCS = {
     "profile-schema": Path("docs") / "PROFILE_SCHEMA.md",
     "release-checklist": Path("docs") / "RELEASE_CHECKLIST.md",
 }
+STRUCTURED_LOG_PATTERN = re.compile(
+    r"^(?P<time>\d{2}:\d{2}:\d{2}) \| "
+    r"(?P<level>DEBUG|INFO|WARNING|ERROR|CRITICAL)\s*\| "
+    r"(?P<label>[^|]+)\| (?P<message>.*)$"
+)
+TERMINAL_LOG_PATTERN = re.compile(
+    r"^(?P<time>\d{2}:\d{2}:\d{2}) \| (?P<level>DEBUG|INFO|WARNING|ERROR|CRITICAL)\s*\| (?:(?P<label>[^|]+)\| )?(?P<message>.*)$"
+)
+FILE_LOG_PATTERN = re.compile(
+    r"^(?P<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) \| (?P<level>DEBUG|INFO|WARNING|ERROR|CRITICAL) \| (?P<label>[^|]+) \| (?P<message>.*)$"
+)
+STUDIO_LOG_PATTERN = re.compile(
+    r"^(?P<time>\d{2}:\d{2}:\d{2}) \| (?P<level>DEBUG|INFO|WARNING|ERROR|CRITICAL) \| (?P<label>Studio) \| (?P<message>.*)$"
+)
 
 
 @dataclass(slots=True)
@@ -93,11 +109,11 @@ def normalize_gui_run_request(payload: dict[str, Any], project_root: Path) -> Gu
 
     api_bootstrap_mode = clean_text(payload.get("api_bootstrap_mode"), "auto").lower() or "auto"
     if api_bootstrap_mode not in VALID_API_BOOTSTRAP_MODES:
-        raise ValueError("Modo de bootstrap API invalido.")
+        raise ValueError("Modo de descoberta inicial invalido.")
 
     log_level = clean_text(payload.get("log_level"), "INFO").upper() or "INFO"
     if log_level not in VALID_LOG_LEVELS:
-        raise ValueError("Nivel de log invalido.")
+        raise ValueError("Nivel de detalhe invalido.")
 
     return GuiRunRequest(
         site_profile=clean_text(payload.get("site_profile"), "auto").lower() or "auto",
@@ -122,6 +138,8 @@ def normalize_gui_run_request(payload: dict[str, Any], project_root: Path) -> Gu
 def build_scraper_subprocess_command(
     request: GuiRunRequest,
     *,
+    profiles_dir: Path | None = None,
+    site_profile_files: tuple[Path, ...] = (),
     python_executable: str | None = None,
 ) -> list[str]:
     command = [python_executable or sys.executable, "-m", "quickwiki"]
@@ -136,6 +154,10 @@ def build_scraper_subprocess_command(
     command.extend(["--checkpoint-every", str(request.checkpoint_every)])
     command.extend(["--api-bootstrap-mode", request.api_bootstrap_mode])
     command.extend(["--log-level", request.log_level])
+    if profiles_dir is not None:
+        command.extend(["--profiles-dir", str(profiles_dir)])
+    for site_profile_file in site_profile_files:
+        command.extend(["--site-profile-file", str(site_profile_file)])
 
     if request.seed_url:
         command.extend(["--seed-url", request.seed_url])
@@ -172,11 +194,13 @@ class QuickWikiGuiApp:
         project_root: Path,
         *,
         profiles_dir: Path | None = None,
+        site_profile_files: tuple[Path, ...] = (),
         docs_root: Path | None = None,
         manual_root: Path | None = None,
     ) -> None:
         self.project_root = project_root.resolve()
         self.profiles_dir = (profiles_dir or (self.project_root / "profiles")).resolve()
+        self.site_profile_files = tuple(path.expanduser().resolve() for path in site_profile_files)
         default_docs_root = self.project_root if (self.project_root / "README.md").exists() else None
         default_manual_root = self.project_root / "Manual do Usuário"
         self.docs_root = docs_root.resolve() if docs_root is not None else default_docs_root
@@ -198,7 +222,7 @@ class QuickWikiGuiApp:
         self.refresh_profiles()
 
     def refresh_profiles(self) -> dict[str, WikiSiteProfile]:
-        profiles = load_site_profiles(self.profiles_dir)
+        profiles = load_site_profiles(self.profiles_dir, extra_profile_files=self.site_profile_files)
         self.site_profiles = profiles
         return profiles
 
@@ -232,6 +256,7 @@ class QuickWikiGuiApp:
             "runtime": self._load_runtime_status(output_dir),
             "report": self._load_run_report(output_dir),
             "logs": log_lines,
+            "log_entries": [parse_log_entry(line) for line in log_lines],
             "links": {
                 "mirror": "/mirror/index.html",
                 "admin": "/mirror/admin/index.html",
@@ -244,10 +269,13 @@ class QuickWikiGuiApp:
 
     def validate_profiles(self) -> dict[str, Any]:
         profiles = self.refresh_profiles()
-        return {
-            "message": f"{len(profiles)} perfil(is) validado(s) com sucesso.",
-            "profiles": self._profiles_payload(),
-        }
+        payload = build_feedback_payload(
+            f"Perfis conferidos. {len(profiles)} opcao(oes) estao prontas para uso.",
+            hint="Agora voce pode escolher um perfil e iniciar um teste pequeno.",
+            level="success",
+        )
+        payload["profiles"] = self._profiles_payload()
+        return payload
 
     def start_run(self, payload: dict[str, Any]) -> dict[str, Any]:
         request = normalize_gui_run_request(payload, self.project_root)
@@ -258,7 +286,11 @@ class QuickWikiGuiApp:
             if self.process is not None and self.process.poll() is None:
                 raise RuntimeError("Ja existe uma execucao em andamento.")
 
-            command = build_scraper_subprocess_command(request)
+            command = build_scraper_subprocess_command(
+                request,
+                profiles_dir=self.profiles_dir,
+                site_profile_files=self.site_profile_files,
+            )
             creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
             process = subprocess.Popen(
                 command,
@@ -276,20 +308,24 @@ class QuickWikiGuiApp:
             self.last_exit_code = None
             self.command_preview = format_command_preview(command)
             self.logs.clear()
-            self.logs.append(f"[studio] Execucao iniciada em {self.started_at}")
-            self.logs.append(f"[studio] Comando: {self.command_preview}")
-            self.logs.append(f"[studio] Saida ativa: {request.output_dir}")
+            self.logs.append(format_studio_log(f"Novo espelho iniciado em {self.started_at}."))
+            self.logs.append(format_studio_log(f"Comando preparado: {self.command_preview}"))
+            self.logs.append(format_studio_log(f"Pasta atual do espelho: {request.output_dir}"))
             self.active_output_dir = request.output_dir
 
         threading.Thread(target=self._pump_process_output, args=(process,), daemon=True).start()
-        return {"message": "Execucao iniciada com sucesso."}
+        return build_feedback_payload(
+            "Espelho iniciado.",
+            hint="Acompanhe o progresso, os atalhos e a atividade na coluna ao lado.",
+            level="success",
+        )
 
     def stop_run(self) -> dict[str, Any]:
         with self.lock:
             process = self.process
             if process is None or process.poll() is not None:
                 raise RuntimeError("Nenhuma execucao ativa para encerrar.")
-            self.logs.append("[studio] Enviando sinal de encerramento para o processo...")
+            self.logs.append(format_studio_log("Enviando pedido de encerramento para o processo...", level="WARNING"))
 
         process.terminate()
         try:
@@ -297,7 +333,11 @@ class QuickWikiGuiApp:
         except subprocess.TimeoutExpired:
             process.kill()
             process.wait(timeout=5)
-        return {"message": "Execucao encerrada pela GUI."}
+        return build_feedback_payload(
+            "Pedido de parada enviado.",
+            hint="Aguarde alguns segundos para o processo encerrar e atualizar a tela.",
+            level="warning",
+        )
 
     def _pump_process_output(self, process: subprocess.Popen[str]) -> None:
         if process.stdout is not None:
@@ -315,14 +355,15 @@ class QuickWikiGuiApp:
             self.last_exit_code = exit_code
             if self.process is process:
                 self.process = None
-            self.logs.append(f"[studio] Execucao finalizada em {finished_at} com exit code {exit_code}.")
+            level = "INFO" if exit_code == 0 else "WARNING"
+            self.logs.append(format_studio_log(f"Processo encerrado em {finished_at} com resultado {exit_code}.", level=level))
 
     def _profiles_payload(self) -> list[dict[str, Any]]:
         payload = [
             {
                 "key": "auto",
-                "label": "Auto detectar",
-                "description": "Detecta o perfil ideal a partir do dominio da seed URL.",
+                "label": "Escolher automaticamente",
+                "description": "O QuickWiki escolhe o perfil pelo dominio do link inicial.",
                 "default_seed_url": "",
                 "schema_version": 0,
                 "wiki_family": "auto",
@@ -351,7 +392,7 @@ class QuickWikiGuiApp:
             return
         active_profiles = profiles or self.site_profiles
         if site_profile not in active_profiles:
-            raise ValueError(f"Perfil desconhecido para a GUI: {site_profile}")
+            raise ValueError(f"Perfil nao encontrado nesta interface: {site_profile}")
 
     def _load_summary(self, output_dir: Path) -> dict[str, Any]:
         return self._load_json_file(output_dir / "data" / "indexes" / "summary.json")
@@ -370,7 +411,7 @@ class QuickWikiGuiApp:
             lines = log_path.read_text(encoding="utf-8").splitlines()
         except OSError:
             return []
-        return lines[-80:]
+        return [strip_ansi(line) for line in lines[-80:]]
 
     def _load_json_file(self, path: Path) -> dict[str, Any]:
         if not path.exists():
@@ -443,7 +484,7 @@ class QuickWikiGuiHandler(BaseHTTPRequestHandler):
                 self._send_json(self.server.app.stop_run())
                 return
         except Exception as exc:  # pragma: no cover
-            self._send_json({"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
+            self._send_json(build_gui_exception_payload(exc), status=HTTPStatus.BAD_REQUEST)
             return
 
         self.send_error(HTTPStatus.NOT_FOUND, "Endpoint nao encontrado.")
@@ -461,7 +502,7 @@ class QuickWikiGuiHandler(BaseHTTPRequestHandler):
         try:
             payload = json.loads(raw.decode("utf-8"))
         except json.JSONDecodeError as exc:
-            raise ValueError("Corpo JSON invalido.") from exc
+            raise ValueError("O corpo enviado nao esta em JSON valido.") from exc
         return payload if isinstance(payload, dict) else {}
 
     def _send_json(self, payload: dict[str, Any], *, status: HTTPStatus = HTTPStatus.OK) -> None:
@@ -543,7 +584,7 @@ def build_missing_project_docs_page(label: str) -> str:
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>QuickWiki Studio - Recurso indisponivel</title>
+    <title>QuickWiki Studio - Conteudo indisponivel</title>
     <style>
       :root {{
         color-scheme: light;
@@ -590,10 +631,10 @@ def build_missing_project_docs_page(label: str) -> str:
   </head>
   <body>
     <main>
-      <h1>Recurso nao empacotado nesta instalacao</h1>
-      <p>O atalho para <strong>{label}</strong> depende do checkout completo do repositorio.</p>
-      <p>Para abrir esta parte da experiencia do QuickWiki Studio, execute a GUI a partir da raiz do projeto ou defina <code>QUICKWIKI_ROOT</code> para apontar para um checkout valido.</p>
-      <p>O crawler, a validacao de perfis built-in e o fluxo principal continuam disponiveis nesta instalacao.</p>
+      <h1>Este conteudo nao veio junto com esta instalacao</h1>
+      <p>O atalho para <strong>{label}</strong> precisa do checkout completo do repositorio.</p>
+      <p>Para abrir esta parte do QuickWiki Studio, execute a GUI a partir da raiz do projeto ou defina <code>QUICKWIKI_ROOT</code> para apontar para um checkout valido.</p>
+      <p>O espelho offline, a validacao dos perfis oficiais e o fluxo principal continuam disponiveis aqui.</p>
     </main>
   </body>
 </html>"""
@@ -605,6 +646,7 @@ def run_quickwiki_gui(
     host: str = "127.0.0.1",
     *,
     profiles_dir: Path | None = None,
+    site_profile_files: tuple[Path, ...] = (),
     docs_root: Path | None = None,
     manual_root: Path | None = None,
 ) -> int:
@@ -612,12 +654,13 @@ def run_quickwiki_gui(
     app = QuickWikiGuiApp(
         project_root,
         profiles_dir=profiles_dir,
+        site_profile_files=site_profile_files,
         docs_root=docs_root,
         manual_root=manual_root,
     )
     server = QuickWikiGuiServer((host, port), app)
-    logger.info("QuickWiki Studio disponivel em http://%s:%s", host, port)
-    logger.info("Abra a interface no navegador e pressione Ctrl+C para encerrar.")
+    logger.info("QuickWiki Studio pronto em http://%s:%s", host, port)
+    logger.info("Abra no navegador e use Ctrl+C para encerrar.")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
@@ -625,3 +668,66 @@ def run_quickwiki_gui(
     finally:
         server.server_close()
     return 0
+
+
+def parse_log_entry(line: str) -> dict[str, str]:
+    normalized = strip_ansi(str(line or "")).strip()
+    if not normalized:
+        return {"kind": "empty", "level": "", "time": "", "label": "", "message": "", "raw": ""}
+
+    file_match = FILE_LOG_PATTERN.match(normalized)
+    if file_match:
+        level = file_match.group("level")
+        return {
+            "kind": "file",
+            "level": level,
+            "time": file_match.group("time"),
+            "label": file_match.group("label").strip(),
+            "message": file_match.group("message"),
+            "raw": normalized,
+        }
+
+    structured_match = STRUCTURED_LOG_PATTERN.match(normalized)
+    if structured_match:
+        level = structured_match.group("level")
+        return {
+            "kind": "structured",
+            "level": level,
+            "time": structured_match.group("time"),
+            "label": structured_match.group("label").strip(),
+            "message": structured_match.group("message"),
+            "raw": normalized,
+        }
+
+    terminal_match = TERMINAL_LOG_PATTERN.match(normalized)
+    if terminal_match:
+        level = terminal_match.group("level")
+        label = (terminal_match.group("label") or level).strip()
+        return {
+            "kind": "terminal",
+            "level": level,
+            "time": terminal_match.group("time"),
+            "label": label,
+            "message": terminal_match.group("message"),
+            "raw": normalized,
+        }
+
+    studio_match = STUDIO_LOG_PATTERN.match(normalized)
+    if studio_match:
+        return {
+            "kind": "studio",
+            "level": studio_match.group("level"),
+            "time": studio_match.group("time"),
+            "label": studio_match.group("label"),
+            "message": studio_match.group("message"),
+            "raw": normalized,
+        }
+
+    return {
+        "kind": "raw",
+        "level": "",
+        "time": "",
+        "label": "TEXTO",
+        "message": normalized,
+        "raw": normalized,
+    }

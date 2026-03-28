@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from scraper.paths import resolve_project_root
+from scraper.paths import _is_source_project_root, resolve_project_root
 
 
 class PathsTests(unittest.TestCase):
@@ -19,6 +19,15 @@ class PathsTests(unittest.TestCase):
                 resolved = resolve_project_root()
 
         self.assertEqual(resolved, expected_root)
+
+    def test_is_source_project_root_requires_profiles_and_run_scraper(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            candidate = Path(tempdir)
+            (candidate / "profiles").mkdir()
+            self.assertFalse(_is_source_project_root(candidate))
+
+            (candidate / "run_scraper.py").write_text("print('ok')", encoding="utf-8")
+            self.assertTrue(_is_source_project_root(candidate))
 
 
 if __name__ == "__main__":

@@ -1,177 +1,909 @@
 from __future__ import annotations
 
-from .version import QUICKWIKI_VERSION, SUPPORTED_BUILTIN_SITE_PROFILES
 
-
-SUPPORTED_PROFILE_LABEL = ", ".join(SUPPORTED_BUILTIN_SITE_PROFILES)
-
-GUI_INDEX_HTML = f"""<!doctype html>
+GUI_INDEX_HTML = """
+<!doctype html>
 <html lang="pt-BR">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>QuickWiki Studio</title>
-  <link rel="stylesheet" href="/app.css">
-</head>
-<body>
-  <div class="studio-noise"></div>
-  <main class="studio-shell">
-    <section class="hero">
-      <div class="hero-copy">
-        <span class="eyebrow">QuickWiki Studio</span>
-        <h1>Operacao local clara, bonita e pronta para release.</h1>
-        <p class="lead">Configure crawls, valide perfis, acompanhe telemetria e abra o espelho offline em um fluxo unico e responsivo.</p>
-        <div class="product-strip">
-          <article class="product-card"><small>Versao</small><strong id="product-version">{QUICKWIKI_VERSION}</strong><span>Release source-first do repositorio.</span></article>
-          <article class="product-card"><small>Suporte oficial</small><strong id="support-scope">Perfis built-in</strong><span>Perfis externos seguem em preview via CLI.</span></article>
-          <article class="product-card"><small>Comando principal</small><strong id="entrypoint-main">quickwiki</strong><span>Fallbacks: <code>python -m quickwiki</code> e <code>python run_scraper.py</code>.</span></article>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>QuickWiki Studio</title>
+    <link rel="stylesheet" href="/app.css">
+  </head>
+  <body>
+    <main class="studio-shell">
+      <section class="studio-hero">
+        <div>
+          <span class="studio-eyebrow">QuickWiki Studio</span>
+          <h1>Monte um espelho offline sem misterio.</h1>
+          <p class="studio-lead">
+            Escolha uma wiki, faca um teste pequeno e acompanhe tudo em um painel local feito
+            para ficar claro do inicio ao fim.
+          </p>
         </div>
-        <div class="hero-links">
-          <a class="pill-link" href="/manual/index.html" target="_blank" rel="noreferrer">Manual</a>
-          <a class="pill-link" href="/docs/readme" target="_blank" rel="noreferrer">README</a>
-          <a class="pill-link" href="/docs/changelog" target="_blank" rel="noreferrer">Changelog</a>
-          <a class="pill-link" href="/docs/technical-docs" target="_blank" rel="noreferrer">Docs tecnicas</a>
-          <a class="pill-link" href="/docs/artifact-contracts" target="_blank" rel="noreferrer">Contratos JSON</a>
-          <a class="pill-link" href="/docs/profile-schema" target="_blank" rel="noreferrer">Schema perfis</a>
-          <a class="pill-link" href="/docs/release-checklist" target="_blank" rel="noreferrer">Checklist V1</a>
-        </div>
-        <p class="hero-note">Perfis oficiais v1: {SUPPORTED_PROFILE_LABEL}. Plataforma principal: Windows. Linux source install segue suportado em CI.</p>
-      </div>
-      <aside class="hero-side">
-        <div class="status-card" id="status-card" data-state="ready">
-          <small>Estado atual</small>
-          <strong id="status-badge">Pronto</strong>
-          <span id="status-detail">Nenhum crawl em execucao.</span>
-        </div>
-        <div class="summary-card">
-          <div class="summary-head">
-            <div><small>Ultimo resumo</small><strong class="summary-title">Saude do espelho</strong></div>
-            <span class="summary-chip" id="platform-label">Windows / Linux source</span>
+        <div class="studio-hero-meta">
+          <div class="studio-stat">
+            <strong id="product-version">-</strong>
+            <span>Versao publica</span>
           </div>
-          <div class="summary-grid">
-            <div><strong id="summary-pages">0</strong><span>Paginas</span></div>
-            <div><strong id="summary-assets">0</strong><span>Assets</span></div>
-            <div><strong id="summary-failures">0</strong><span>Falhas</span></div>
-            <div><strong id="summary-profile">-</strong><span>Perfil</span></div>
+          <div class="studio-stat">
+            <strong id="platform-label">-</strong>
+            <span>Plataforma principal</span>
           </div>
-          <p class="summary-note" id="summary-health">Sem relatorio operacional carregado.</p>
-          <div class="summary-meta"><span>Output atual: <code id="default-output">output</code></span><span>Entrada oficial: <code>quickwiki</code></span></div>
+          <div class="studio-stat">
+            <strong id="support-scope">-</strong>
+            <span>Escopo de perfis</span>
+          </div>
         </div>
-      </aside>
-    </section>
+      </section>
 
-    <section class="workflow">
-      <article><span>01</span><strong>Validar</strong><p>Confirme os perfis antes da primeira rodada.</p></article>
-      <article><span>02</span><strong>Rodar pequeno</strong><p>Use poucas paginas para revisar a saude do fluxo.</p></article>
-      <article><span>03</span><strong>Abrir e revisar</strong><p>Use os atalhos para conferir espelho, admin e artefatos.</p></article>
-    </section>
-
-    <section class="workspace">
-      <section class="panel form-panel">
-        <div class="panel-head">
-          <div><span class="eyebrow">Execucao</span><h2>Configurar novo crawl</h2></div>
-          <p>Onboarding rapido, linguagem publica e foco no caminho oficialmente suportado da v1.</p>
-        </div>
-        <div class="support-banner"><strong>Escopo oficial da release</strong><span>Perfis incluidos no repositorio sao o caminho recomendado. Perfis externos continuam disponiveis via CLI como modo avancado.</span></div>
-        <form id="run-form">
-          <div class="field-grid">
-            <label class="field wide"><span>Perfil</span><select id="site-profile" name="site_profile"></select></label>
-            <label class="field wide"><span>Seed URL</span><input id="seed-url" name="seed_url" type="url" placeholder="https://www.tibiawiki.com.br/wiki/Home"></label>
-            <label class="field"><span>Pasta de saida</span><input id="output-dir" name="output_dir" type="text" placeholder="output"></label>
-            <label class="field"><span>Max. paginas</span><input id="max-pages" name="max_pages" type="number" min="1" placeholder="25"></label>
-            <label class="field"><span>Workers</span><input id="workers" name="workers" type="number" min="1" value="8"></label>
-            <label class="field"><span>Workers de assets</span><input id="asset-workers" name="asset_workers" type="number" min="1" value="8"></label>
-            <label class="field"><span>Rate limit</span><input id="rate-limit" name="rate_limit" type="number" step="0.1" min="0.1" value="2.0"></label>
-            <label class="field"><span>Timeout</span><input id="timeout" name="timeout" type="number" step="1" min="3" value="30"></label>
-          </div>
-          <div class="profile-card">
-            <small>Perfil selecionado</small>
-            <strong id="profile-title">Auto detectar</strong>
-            <p id="profile-description">A GUI pode sugerir o perfil ideal a partir do dominio da seed URL.</p>
-            <code id="profile-seed">-</code>
-          </div>
-          <details class="advanced">
-            <summary>Configuracoes avancadas</summary>
-            <p class="advanced-note">O fluxo guiado da v1 nao inclui importacao assistida de perfis externos.</p>
-            <div class="field-grid">
-              <label class="field"><span>Max. retries</span><input id="max-retries" name="max_retries" type="number" min="0" value="4"></label>
-              <label class="field"><span>Retry failed passes</span><input id="retry-failed-passes" name="retry_failed_passes" type="number" min="0" value="1"></label>
-              <label class="field"><span>Checkpoint</span><input id="checkpoint-every" name="checkpoint_every" type="number" min="1" value="25"></label>
-              <label class="field"><span>Bootstrap API</span><select id="api-bootstrap-mode" name="api_bootstrap_mode"><option value="auto">auto</option><option value="always">always</option><option value="off">off</option></select></label>
-              <label class="field"><span>Nivel de log</span><select id="log-level" name="log_level"><option value="INFO">INFO</option><option value="DEBUG">DEBUG</option><option value="WARNING">WARNING</option><option value="ERROR">ERROR</option></select></label>
+      <section class="studio-grid">
+        <section class="studio-card">
+          <header class="studio-card-head">
+            <div>
+              <h2>Comece por aqui</h2>
+              <p>Preencha o essencial e deixe o resto no padrao para um primeiro teste seguro.</p>
             </div>
-            <div class="toggle-row">
-              <label><input id="fresh" name="fresh" type="checkbox"> Comecar do zero (--fresh)</label>
-              <label><input id="ignore-robots" name="ignore_robots" type="checkbox"> Ignorar robots.txt</label>
-              <label><input id="no-source" name="no_source" type="checkbox"> Nao capturar source wiki</label>
+            <span class="studio-badge neutral" id="status-badge">Parado</span>
+          </header>
+
+          <div class="studio-field-grid">
+            <label class="studio-field">
+              <span>Perfil da wiki</span>
+              <select id="site-profile"></select>
+            </label>
+            <label class="studio-field">
+              <span>Link inicial</span>
+              <input id="seed-url" type="url" placeholder="https://exemplo.com/wiki/Pagina_Inicial">
+            </label>
+            <label class="studio-field">
+              <span>Pasta onde salvar</span>
+              <input id="output-dir" type="text" placeholder="output">
+            </label>
+            <label class="studio-field">
+              <span>Limite de paginas</span>
+              <input id="max-pages" type="number" min="1" placeholder="25">
+            </label>
+            <label class="studio-field">
+              <span>Processamento paralelo</span>
+              <input id="workers" type="number" min="1" value="8">
+            </label>
+            <label class="studio-field">
+              <span>Downloads por pagina</span>
+              <input id="asset-workers" type="number" min="1" value="8">
+            </label>
+            <label class="studio-field">
+              <span>Ritmo de acesso</span>
+              <input id="rate-limit" type="number" min="0.1" step="0.1" value="2.0">
+            </label>
+            <label class="studio-field">
+              <span>Tempo limite</span>
+              <input id="timeout" type="number" min="3" step="1" value="30">
+            </label>
+          </div>
+
+          <details class="studio-advanced">
+            <summary>Mais opcoes</summary>
+            <div class="studio-field-grid advanced-grid">
+              <label class="studio-field">
+                <span>Novas tentativas</span>
+                <input id="max-retries" type="number" min="0" value="4">
+              </label>
+              <label class="studio-field">
+                <span>Rodadas extras</span>
+                <input id="retry-failed-passes" type="number" min="0" value="1">
+              </label>
+              <label class="studio-field">
+                <span>Salvar progresso a cada</span>
+                <input id="checkpoint-every" type="number" min="1" value="25">
+              </label>
+              <label class="studio-field">
+                <span>Descoberta inicial</span>
+                <select id="api-bootstrap-mode">
+                  <option value="auto">Automatica</option>
+                  <option value="always">Sempre tentar</option>
+                  <option value="off">Desligada</option>
+                </select>
+              </label>
+              <label class="studio-field">
+                <span>Detalhe das mensagens</span>
+                <select id="log-level">
+                  <option value="INFO">INFO</option>
+                  <option value="DEBUG">DEBUG</option>
+                  <option value="WARNING">WARNING</option>
+                  <option value="ERROR">ERROR</option>
+                </select>
+              </label>
+            </div>
+            <div class="studio-switches">
+              <label><input id="fresh" type="checkbox"> Comecar do zero</label>
+              <label><input id="ignore-robots" type="checkbox"> Ignorar robots.txt</label>
+              <label><input id="no-source" type="checkbox"> Nao salvar o codigo-fonte da wiki</label>
             </div>
           </details>
-          <div class="action-row">
-            <button class="button primary" id="start-run" type="submit">Iniciar crawl</button>
-            <button class="button secondary" id="validate-profiles" type="button">Validar perfis</button>
-            <button class="button ghost" id="stop-run" type="button">Parar execucao</button>
+
+          <div class="studio-actions">
+            <button id="start-run" class="primary">Iniciar espelho</button>
+            <button id="validate-profiles">Revisar perfis</button>
+            <button id="stop-run" class="danger">Parar agora</button>
           </div>
-        </form>
+
+          <div class="studio-subtle" id="status-detail">Aguardando a primeira execucao.</div>
+          <code class="studio-command" id="command-line">O comando aparece aqui quando uma rodada comeca.</code>
+        </section>
+
+        <section class="studio-card">
+          <header class="studio-card-head">
+            <div>
+              <h2>Perfil escolhido</h2>
+              <p>Use este painel para confirmar rapidamente se voce esta apontando para a wiki certa.</p>
+            </div>
+          </header>
+          <div class="studio-profile-box">
+            <h3 id="profile-title">Escolha um perfil</h3>
+            <p id="profile-description">As orientacoes do perfil aparecem aqui.</p>
+            <div class="studio-inline-pair">
+              <span class="studio-inline-label">Pagina inicial sugerida</span>
+              <code id="profile-seed">-</code>
+            </div>
+            <div class="studio-inline-pair">
+              <span class="studio-inline-label">Entrypoint principal</span>
+              <code id="entrypoint-main">quickwiki</code>
+            </div>
+            <div class="studio-inline-pair">
+              <span class="studio-inline-label">Saida padrao</span>
+              <code id="default-output">output</code>
+            </div>
+          </div>
+          <div class="studio-link-grid">
+            <a id="mirror-link" href="#" target="_blank" rel="noreferrer">Abrir espelho</a>
+            <a id="admin-link" href="#" target="_blank" rel="noreferrer">Area tecnica</a>
+            <a id="summary-link" href="#" target="_blank" rel="noreferrer">Resumo da execucao</a>
+            <a id="report-link" href="#" target="_blank" rel="noreferrer">Detalhes da execucao</a>
+            <a id="runtime-link" href="#" target="_blank" rel="noreferrer">Status da execucao</a>
+            <a id="manual-link" href="#" target="_blank" rel="noreferrer">Manual do usuario</a>
+          </div>
+        </section>
+
+        <section class="studio-card">
+          <header class="studio-card-head">
+            <div>
+              <h2>Resumo rapido</h2>
+              <p>Numeros principais da ultima rodada salva nesta pasta.</p>
+            </div>
+          </header>
+          <div class="studio-mini-grid">
+            <div class="studio-metric"><strong id="summary-pages">0</strong><span>Paginas salvas</span></div>
+            <div class="studio-metric"><strong id="summary-assets">0</strong><span>Arquivos salvos</span></div>
+            <div class="studio-metric"><strong id="summary-failures">0</strong><span>Pendencias</span></div>
+            <div class="studio-metric"><strong id="summary-profile">-</strong><span>Perfil em uso</span></div>
+            <div class="studio-metric"><strong id="summary-health">-</strong><span>Saude da rodada</span></div>
+          </div>
+          <div class="studio-run-grid">
+            <div><span class="studio-inline-label">PID</span><strong id="run-pid">-</strong></div>
+            <div><span class="studio-inline-label">Inicio</span><strong id="run-started">-</strong></div>
+            <div><span class="studio-inline-label">Fim</span><strong id="run-finished">-</strong></div>
+            <div><span class="studio-inline-label">Resultado</span><strong id="run-exit">-</strong></div>
+          </div>
+        </section>
       </section>
 
-      <section class="stack">
-        <section class="panel">
-          <div class="panel-head">
-            <div><span class="eyebrow">Acompanhamento</span><h2>Status e atalhos</h2></div>
-            <p id="command-line">Nenhum comando ativo.</p>
+      <section class="studio-grid lower">
+        <section class="studio-card">
+          <header class="studio-card-head">
+            <div>
+              <h2 id="runtime-headline">Aguardando atividade</h2>
+              <p id="runtime-message">Quando o espelho rodar, esta area mostra a fase atual e os sinais mais importantes.</p>
+            </div>
+          </header>
+          <div class="studio-mini-grid">
+            <div class="studio-metric"><strong id="runtime-phase">Parado</strong><span>Fase atual</span></div>
+            <div class="studio-metric"><strong id="runtime-pages-saved">0</strong><span>Paginas salvas</span></div>
+            <div class="studio-metric"><strong id="runtime-pages-attempted">0</strong><span>Paginas tentadas</span></div>
+            <div class="studio-metric"><strong id="runtime-pending">0</strong><span>Aguardando</span></div>
+            <div class="studio-metric"><strong id="runtime-failures">0</strong><span>Falhas</span></div>
+            <div class="studio-metric"><strong id="runtime-sources">0</strong><span>Paginas com codigo-fonte</span></div>
+            <div class="studio-metric"><strong id="runtime-rate">0</strong><span>Ritmo configurado</span></div>
+            <div class="studio-metric"><strong id="runtime-updated">-</strong><span>Ultima atualizacao</span></div>
           </div>
-          <div class="shortcut-grid">
-            <a class="shortcut" id="mirror-link" href="/mirror/index.html" target="_blank" rel="noreferrer"><strong>Abrir espelho</strong><span>Home offline atual</span></a>
-            <a class="shortcut" id="admin-link" href="/mirror/admin/index.html" target="_blank" rel="noreferrer"><strong>Abrir admin</strong><span>Painel do perfil ativo</span></a>
-            <a class="shortcut" id="summary-link" href="/mirror/data/indexes/summary.json" target="_blank" rel="noreferrer"><strong>Abrir resumo</strong><span>JSON do ultimo crawl</span></a>
-            <a class="shortcut" id="report-link" href="/mirror/data/indexes/run_report.json" target="_blank" rel="noreferrer"><strong>Abrir relatorio</strong><span>Saude operacional</span></a>
-            <a class="shortcut" id="runtime-link" href="/mirror/checkpoints/runtime_status.json" target="_blank" rel="noreferrer"><strong>Status ao vivo</strong><span>Snapshot atual do crawler</span></a>
-            <a class="shortcut" id="manual-link" href="/manual/index.html" target="_blank" rel="noreferrer"><strong>Abrir manual</strong><span>Guia visual do usuario</span></a>
-          </div>
-          <div class="info-grid">
-            <div class="info-card"><small>PID</small><strong id="run-pid">-</strong></div>
-            <div class="info-card"><small>Inicio</small><strong id="run-started">-</strong></div>
-            <div class="info-card"><small>Fim</small><strong id="run-finished">-</strong></div>
-            <div class="info-card"><small>Exit code</small><strong id="run-exit">-</strong></div>
-          </div>
-        </section>
-
-        <section class="panel">
-          <div class="panel-head">
-            <div><span class="eyebrow">Telemetria</span><h2>Checkpoint e saude</h2></div>
-            <p id="runtime-headline">Sem dados operacionais ainda.</p>
-          </div>
-          <div class="telemetry-grid">
-            <div class="telemetry-card"><small>Fase</small><strong id="runtime-phase">-</strong><span>Etapa atual do crawler</span></div>
-            <div class="telemetry-card"><small>Paginas salvas</small><strong id="runtime-pages-saved">0</strong><span>Paginas persistidas</span></div>
-            <div class="telemetry-card"><small>Tentativas</small><strong id="runtime-pages-attempted">0</strong><span>Paginas processadas</span></div>
-            <div class="telemetry-card"><small>Pendentes</small><strong id="runtime-pending">0</strong><span>Frontier ainda ativo</span></div>
-            <div class="telemetry-card"><small>Falhas</small><strong id="runtime-failures">0</strong><span>Paginas com erro</span></div>
-            <div class="telemetry-card"><small>Sources wiki</small><strong id="runtime-sources">0</strong><span>Paginas com wikitext</span></div>
-            <div class="telemetry-card"><small>Ritmo</small><strong id="runtime-rate">-</strong><span>Paginas salvas por minuto</span></div>
-            <div class="telemetry-card"><small>Atualizado</small><strong id="runtime-updated">-</strong><span>Snapshot mais recente</span></div>
-          </div>
-          <div class="telemetry-banner">
-            <strong id="runtime-message">Sem relatorio operacional carregado.</strong>
-            <ul class="note-list" id="runtime-notes"><li>Nenhum alerta ou nota operacional registrado.</li></ul>
+          <div class="studio-note-box">
+            <strong>Observacoes</strong>
+            <p id="runtime-notes">Sem observacoes por enquanto.</p>
           </div>
         </section>
 
-        <section class="panel">
-          <div class="panel-head">
-            <div><span class="eyebrow">Logs</span><h2>Saida ao vivo</h2></div>
-            <p>Atualizacao automatica a cada 2 segundos.</p>
+        <section class="studio-card">
+          <header class="studio-card-head">
+            <div>
+              <h2>Painel ao vivo</h2>
+              <p>Atualizacao automatica a cada 2 segundos, com niveis destacados por cor.</p>
+            </div>
+          </header>
+          <div class="log-output" id="log-output">
+            <div class="log-empty">As mensagens da execucao aparecerao aqui.</div>
           </div>
-          <pre id="log-output">Aguardando execucao...</pre>
         </section>
       </section>
-    </section>
-  </main>
-  <div class="toast" id="toast"></div>
-  <script src="/app.js"></script>
-</body>
-</html>""".strip()
+    </main>
 
-GUI_CSS = """:root{--bg:#f4ecdf;--ink:#241914;--muted:#6c5d51;--line:rgba(93,61,39,.14);--panel:rgba(255,251,246,.86);--accent:#b24c25;--accent-deep:#6e2d18;--teal:#245f62;--ok:#206a45;--warn:#945812;--shadow:0 24px 60px rgba(74,48,27,.12);--soft:0 12px 24px rgba(74,48,27,.08)}*{box-sizing:border-box}html,body{margin:0;min-height:100%}body{color:var(--ink);background:radial-gradient(circle at top left,rgba(248,217,187,.96),transparent 34%),radial-gradient(circle at top right,rgba(207,232,227,.88),transparent 28%),linear-gradient(180deg,#f8f2e9 0%,var(--bg) 100%);font-family:"Trebuchet MS","Lucida Sans Unicode",sans-serif}.studio-noise{position:fixed;inset:0;pointer-events:none;background:radial-gradient(circle at 18% 12%,rgba(255,255,255,.48),transparent 24%),repeating-linear-gradient(135deg,rgba(86,58,37,.018) 0,rgba(86,58,37,.018) 2px,transparent 2px,transparent 18px)}.studio-shell{position:relative;max-width:1320px;margin:0 auto;padding:28px 20px 56px}.hero,.workflow article,.panel,.status-card,.summary-card,.shortcut,.info-card,.profile-card,.telemetry-card,.telemetry-banner,.product-card,.support-banner,.toast{backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}.hero{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(320px,.85fr);gap:22px;padding:30px;border:1px solid var(--line);border-radius:30px;background:linear-gradient(180deg,rgba(255,252,247,.93),rgba(248,240,229,.82));box-shadow:var(--shadow)}.hero h1,.panel h2,.workflow strong,.summary-title{font-family:"Palatino Linotype","Book Antiqua",Georgia,serif}.hero h1{margin:14px 0 10px;max-width:12ch;font-size:clamp(2.9rem,5vw,5rem);line-height:.95;color:var(--accent-deep)}.lead,.panel-head p,.workflow p,.profile-card p,.shortcut span,.telemetry-card span,.summary-note,.hero-note,.advanced-note,small{color:var(--muted)}.lead{max-width:64ch;margin:0;font-size:1.06rem;line-height:1.76}.eyebrow{display:inline-flex;align-items:center;padding:8px 12px;border-radius:999px;background:rgba(178,76,37,.1);color:var(--accent);font-size:.78rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase}.hero-copy,.hero-side,.stack{display:grid;gap:16px}.product-strip,.summary-grid,.workflow,.field-grid,.shortcut-grid,.info-grid,.telemetry-grid{display:grid;gap:14px}.product-strip{grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin-top:18px}.product-card,.status-card,.summary-card,.panel,.workflow article,.shortcut,.info-card,.profile-card,.telemetry-card,.telemetry-banner,.support-banner{padding:18px;border:1px solid var(--line);border-radius:22px;background:var(--panel);box-shadow:var(--soft)}.product-card strong,.status-card strong,.summary-grid strong,.info-card strong,.profile-card strong,.shortcut strong,.telemetry-card strong{display:block;color:var(--accent-deep)}.summary-head{display:flex;align-items:start;justify-content:space-between;gap:12px}.summary-title{margin-top:8px;font-size:1.25rem}.summary-chip{display:inline-flex;align-items:center;min-height:32px;padding:6px 10px;border-radius:999px;background:rgba(36,95,98,.1);color:var(--teal);font-size:.82rem;font-weight:700}.summary-grid{grid-template-columns:repeat(2,minmax(0,1fr));margin-top:16px}.summary-grid strong,.telemetry-card strong{font-size:1.35rem}.summary-note,.hero-note{margin:0;line-height:1.58}.hero-links{display:flex;flex-wrap:wrap;gap:10px}.pill-link,.shortcut{text-decoration:none}.pill-link{display:inline-flex;align-items:center;min-height:42px;padding:9px 13px;border-radius:14px;border:1px solid var(--line);background:rgba(255,249,240,.84);color:var(--accent-deep);font-weight:700}.status-card strong{margin:8px 0 6px;font-size:1.22rem}.status-card[data-state="running"]{border-color:rgba(36,95,98,.26)}.status-card[data-state="running"] strong{color:var(--teal)}.status-card[data-state="success"]{border-color:rgba(32,106,69,.26)}.status-card[data-state="success"] strong{color:var(--ok)}.status-card[data-state="warning"]{border-color:rgba(148,88,18,.26)}.status-card[data-state="warning"] strong{color:var(--warn)}.summary-meta{display:flex;flex-wrap:wrap;gap:10px 16px;margin-top:14px;font-size:.9rem;color:var(--muted)}.summary-meta code,.profile-card code{font-family:Consolas,"Courier New",monospace}.workflow{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:18px}.workflow article{background:linear-gradient(180deg,rgba(255,250,244,.96),rgba(252,245,236,.86))}.workflow span{display:inline-flex;width:42px;height:42px;align-items:center;justify-content:center;border-radius:14px;border:1px solid rgba(93,61,39,.12);background:rgba(255,248,239,.92);color:var(--accent);font-weight:900}.workflow strong{display:block;margin:14px 0 8px;font-size:1.26rem;color:var(--accent-deep)}.workflow p{margin:0;line-height:1.62}.workspace{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(360px,.92fr);gap:18px;margin-top:18px;align-items:start}.form-panel{background:linear-gradient(180deg,rgba(255,252,247,.94),rgba(251,244,236,.84))}.panel-head{display:flex;align-items:start;justify-content:space-between;gap:14px;margin-bottom:18px}.panel-head h2{margin:10px 0 0;color:var(--accent-deep);font-size:2rem}.panel-head p{margin:6px 0 0;max-width:34ch;line-height:1.62}.support-banner{display:grid;gap:6px;margin-bottom:18px;background:linear-gradient(135deg,rgba(255,247,237,.98),rgba(246,241,233,.88))}.field-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.wide{grid-column:span 2}.field{display:grid;gap:8px}.field span{color:var(--accent-deep);font-weight:700}.field input,.field select{width:100%;min-height:50px;padding:12px 14px;border:1px solid rgba(93,61,39,.14);border-radius:14px;background:rgba(255,253,250,.96);color:var(--ink);font-size:.98rem}.field input:focus,.field select:focus{outline:2px solid rgba(178,76,37,.18);border-color:rgba(178,76,37,.38)}.profile-card{display:grid;gap:8px;margin-top:16px;background:linear-gradient(180deg,rgba(255,249,241,.98),rgba(252,245,236,.9))}.profile-card p{margin:0;line-height:1.6}.profile-card code{width:fit-content;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.76);border:1px solid rgba(93,61,39,.1);color:var(--accent-deep)}.advanced{margin-top:18px;padding:16px;border-radius:18px;border:1px dashed rgba(93,61,39,.18);background:rgba(255,250,243,.62)}.advanced summary{cursor:pointer;color:var(--accent-deep);font-weight:800}.advanced-note{margin:12px 0 16px;line-height:1.56}.toggle-row{display:grid;gap:12px;margin-top:16px;color:#3e3128}.toggle-row label{display:flex;gap:10px;align-items:center}.action-row{display:flex;flex-wrap:wrap;gap:12px;margin-top:20px}.button{display:inline-flex;align-items:center;justify-content:center;min-height:50px;padding:10px 18px;border:0;border-radius:14px;cursor:pointer;font-weight:800;transition:transform .16s ease,opacity .16s ease}.button:disabled{opacity:.58;cursor:not-allowed}.primary{background:linear-gradient(135deg,var(--accent) 0%,#c8633c 100%);color:#fff8f3}.secondary{background:linear-gradient(135deg,var(--teal) 0%,#39787a 100%);color:#f3fffe}.ghost{background:rgba(255,248,240,.88);color:var(--accent-deep);border:1px solid rgba(93,61,39,.12)}.shortcut-grid{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}.info-grid{grid-template-columns:repeat(auto-fit,minmax(140px,1fr));margin-top:14px}.telemetry-grid{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}.shortcut,.info-card,.telemetry-card{min-height:132px}.shortcut span,.info-card small,.telemetry-card small,.telemetry-card span{margin-top:6px}.telemetry-banner{margin-top:14px;background:linear-gradient(180deg,rgba(255,249,241,.98),rgba(252,245,236,.9))}.telemetry-banner strong{display:block;color:var(--accent-deep)}.note-list{margin:12px 0 0;padding-left:18px;color:var(--muted);line-height:1.55}pre{max-height:520px;margin:0;overflow:auto;padding:18px;border-radius:18px;background:linear-gradient(180deg,rgba(34,30,27,.98),rgba(47,37,31,.96));color:#f7efe5;font-family:Consolas,"Courier New",monospace;font-size:.92rem;line-height:1.62}.toast{position:fixed;right:20px;bottom:20px;min-width:260px;max-width:420px;padding:14px 16px;border-radius:16px;border:1px solid rgba(93,61,39,.12);background:rgba(255,252,247,.96);box-shadow:var(--shadow);color:var(--accent-deep);opacity:0;transform:translateY(10px);pointer-events:none;transition:opacity .2s ease,transform .2s ease}.toast.is-visible{opacity:1;transform:translateY(0)}code{font-family:Consolas,"Courier New",monospace}@media (max-width:1120px){.hero,.workspace{grid-template-columns:1fr}.panel-head{flex-direction:column}.panel-head p{max-width:none}}@media (max-width:860px){.workflow,.field-grid{grid-template-columns:1fr}.wide{grid-column:auto}}@media (max-width:720px){.studio-shell{padding:16px 12px 28px}.hero,.panel,.status-card,.summary-card,.shortcut,.info-card,.profile-card,.telemetry-card,.telemetry-banner,.workflow article,.product-card,.support-banner{border-radius:18px}.hero{padding:20px}.hero h1{max-width:none;font-size:2.65rem}.summary-head{flex-direction:column}.action-row{flex-direction:column}.button{width:100%}}""".strip()
+    <div class="toast" id="toast" hidden></div>
+    <script src="/app.js"></script>
+  </body>
+</html>
+""".strip()
 
-GUI_JS = """const state={refreshTimer:null,lastRunningState:null,profiles:new Map(),lastSeedSuggestion:''};const els={form:document.getElementById('run-form'),profileSelect:document.getElementById('site-profile'),seedUrl:document.getElementById('seed-url'),outputDir:document.getElementById('output-dir'),maxPages:document.getElementById('max-pages'),workers:document.getElementById('workers'),assetWorkers:document.getElementById('asset-workers'),rateLimit:document.getElementById('rate-limit'),timeout:document.getElementById('timeout'),maxRetries:document.getElementById('max-retries'),retryFailedPasses:document.getElementById('retry-failed-passes'),checkpointEvery:document.getElementById('checkpoint-every'),apiBootstrapMode:document.getElementById('api-bootstrap-mode'),logLevel:document.getElementById('log-level'),fresh:document.getElementById('fresh'),ignoreRobots:document.getElementById('ignore-robots'),noSource:document.getElementById('no-source'),startRun:document.getElementById('start-run'),validateProfiles:document.getElementById('validate-profiles'),stopRun:document.getElementById('stop-run'),logOutput:document.getElementById('log-output'),statusCard:document.getElementById('status-card'),statusBadge:document.getElementById('status-badge'),statusDetail:document.getElementById('status-detail'),commandLine:document.getElementById('command-line'),summaryPages:document.getElementById('summary-pages'),summaryAssets:document.getElementById('summary-assets'),summaryFailures:document.getElementById('summary-failures'),summaryProfile:document.getElementById('summary-profile'),summaryHealth:document.getElementById('summary-health'),runPid:document.getElementById('run-pid'),runStarted:document.getElementById('run-started'),runFinished:document.getElementById('run-finished'),runExit:document.getElementById('run-exit'),mirrorLink:document.getElementById('mirror-link'),adminLink:document.getElementById('admin-link'),summaryLink:document.getElementById('summary-link'),reportLink:document.getElementById('report-link'),runtimeLink:document.getElementById('runtime-link'),manualLink:document.getElementById('manual-link'),profileTitle:document.getElementById('profile-title'),profileDescription:document.getElementById('profile-description'),profileSeed:document.getElementById('profile-seed'),runtimeHeadline:document.getElementById('runtime-headline'),runtimePhase:document.getElementById('runtime-phase'),runtimePagesSaved:document.getElementById('runtime-pages-saved'),runtimePagesAttempted:document.getElementById('runtime-pages-attempted'),runtimePending:document.getElementById('runtime-pending'),runtimeFailures:document.getElementById('runtime-failures'),runtimeSources:document.getElementById('runtime-sources'),runtimeRate:document.getElementById('runtime-rate'),runtimeUpdated:document.getElementById('runtime-updated'),runtimeMessage:document.getElementById('runtime-message'),runtimeNotes:document.getElementById('runtime-notes'),toast:document.getElementById('toast'),productVersion:document.getElementById('product-version'),supportScope:document.getElementById('support-scope'),entrypointMain:document.getElementById('entrypoint-main'),platformLabel:document.getElementById('platform-label'),defaultOutput:document.getElementById('default-output')};function showToast(message){els.toast.textContent=message;els.toast.classList.add('is-visible');clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>els.toast.classList.remove('is-visible'),3200)}function formatNumber(value){const numeric=Number(value||0);if(!Number.isFinite(numeric))return'0';return new Intl.NumberFormat('pt-BR').format(numeric)}function formatDate(value){if(!value)return'-';const parsed=Date.parse(value);if(Number.isNaN(parsed))return value;return new Date(parsed).toLocaleString('pt-BR')}function formatRate(pagesSaved,startedAt,updatedAt){const saved=Number(pagesSaved||0);const started=Date.parse(startedAt||'');const updated=Date.parse(updatedAt||'');if(!saved||Number.isNaN(started)||Number.isNaN(updated)||updated<=started)return'-';const minutes=(updated-started)/60000;if(minutes<=0)return'-';return`${(saved/minutes).toFixed(1)}/min`}function humanizePhase(value){const mapping={starting:'Iniciando',bootstrapping:'Bootstrap',crawling:'Crawling',retrying:'Retry',finalizing:'Finalizando',completed:'Concluido',failed:'Falhou',idle:'Parado'};return mapping[value]||(value||'-')}function humanizeHealth(value){const mapping={ok:'Estavel',warning:'Atencao',error:'Critico'};return mapping[value]||(value||'Sem dados')}function renderProduct(product){const payload=product||{};const profiles=Array.isArray(payload.supported_profile_keys)?payload.supported_profile_keys.join(', '):'Perfis built-in';els.productVersion.textContent=payload.version||els.productVersion.textContent||'-';els.supportScope.textContent=profiles||'Perfis built-in';els.entrypointMain.textContent=payload.canonical_entrypoint||'quickwiki';els.platformLabel.textContent=payload.primary_operator_platform?`${payload.primary_operator_platform} / Linux source`:'Windows / Linux source'}function setProfileOptions(profiles){const current=els.profileSelect.value||'auto';els.profileSelect.innerHTML='';state.profiles.clear();for(const profile of profiles||[]){const option=document.createElement('option');option.value=profile.key;option.textContent=`${profile.label} (${profile.key})`;els.profileSelect.append(option);state.profiles.set(profile.key,{label:profile.label||profile.key,description:profile.description||'',defaultSeedUrl:profile.default_seed_url||''})}els.profileSelect.value=state.profiles.has(current)?current:'auto';syncProfileCard()}function syncProfileCard(){const profile=state.profiles.get(els.profileSelect.value)||{label:'Auto detectar',description:'A GUI pode sugerir o perfil ideal a partir do dominio da seed URL.',defaultSeedUrl:''};els.profileTitle.textContent=profile.label;els.profileDescription.textContent=profile.description||'Sem descricao adicional para este perfil.';els.profileSeed.textContent=profile.defaultSeedUrl||'-';const currentSeed=els.seedUrl.value.trim();if(profile.defaultSeedUrl&&(!currentSeed||currentSeed===state.lastSeedSuggestion)){els.seedUrl.value=profile.defaultSeedUrl;state.lastSeedSuggestion=profile.defaultSeedUrl}}function renderLogs(lines){const pre=els.logOutput;const nearBottom=pre.scrollHeight-pre.scrollTop-pre.clientHeight<24;pre.textContent=Array.isArray(lines)&&lines.length?lines.join('\\n'):'Aguardando execucao...';if(nearBottom||pre.scrollTop===0)pre.scrollTop=pre.scrollHeight}function renderNoteList(notes){els.runtimeNotes.innerHTML='';const items=Array.isArray(notes)&&notes.length?notes:['Nenhum alerta ou nota operacional registrado.'];for(const note of items){const li=document.createElement('li');li.textContent=note;els.runtimeNotes.append(li)}}function renderSummary(summary,health){const payload=summary||{};const warnings=Array.isArray(health.warnings)?health.warnings:[];const notes=Array.isArray(health.notes)?health.notes:[];const lead=warnings[0]||notes[0];els.summaryPages.textContent=formatNumber(payload.pages_saved);els.summaryAssets.textContent=formatNumber(payload.assets_saved);els.summaryFailures.textContent=formatNumber(payload.failed_pages);els.summaryProfile.textContent=payload.site_label||payload.site_profile||'-';els.summaryHealth.textContent=lead?`${humanizeHealth(health.status)} | ${lead}`:`${humanizeHealth(health.status)} | Nenhum alerta operacional destacado.`}function renderRuntime(run,runtime,report){const runtimeStats=runtime&&runtime.stats?runtime.stats:{};const queue=runtime&&runtime.queue?runtime.queue:{};const runtimeFailed=runtime&&runtime.failed_pages?runtime.failed_pages:{};const reportHealth=report&&report.health?report.health:{};const runtimeHealth=runtime&&runtime.health?runtime.health:{};const health=reportHealth.status?reportHealth:runtimeHealth;const warnings=Array.isArray(health.warnings)?health.warnings:[];const notes=Array.isArray(health.notes)?health.notes:[];const mergedNotes=warnings.concat(notes);const reportSummary=report&&report.summary?report.summary:{};const reportStats=report&&report.stats?report.stats:{};const pagesSaved=runtimeStats.pages_saved??reportSummary.pages_saved??0;const pagesAttempted=runtimeStats.pages_attempted??reportStats.pages_attempted??0;const pending=queue.pending??0;const failures=runtimeFailed.count??reportSummary.failed_pages??0;const sources=runtimeStats.source_pages_captured??reportStats.source_pages_captured??0;const updatedAt=runtime.updated_at||report.generated_at||'';const startedAt=runtimeStats.started_at||run.started_at||'';els.runtimeHeadline.textContent=runtime.phase?`${humanizePhase(runtime.phase)} com telemetria operacional carregada.`:'Sem dados operacionais ainda. Rode um crawl pequeno para validar a experiencia.';els.runtimePhase.textContent=humanizePhase(runtime.phase);els.runtimePagesSaved.textContent=formatNumber(pagesSaved);els.runtimePagesAttempted.textContent=formatNumber(pagesAttempted);els.runtimePending.textContent=formatNumber(pending);els.runtimeFailures.textContent=formatNumber(failures);els.runtimeSources.textContent=formatNumber(sources);els.runtimeRate.textContent=formatRate(pagesSaved,startedAt,updatedAt);els.runtimeUpdated.textContent=formatDate(updatedAt);els.runtimeMessage.textContent=runtime.phase?`${humanizeHealth(health.status)} | ${warnings[0]||notes[0]||'Execucao monitorada com snapshot atualizado.'}`:'Sem relatorio operacional carregado.';renderNoteList(mergedNotes);return{health,pagesSaved,pending,failures}}function applyLinks(links){const payload=links||{};els.mirrorLink.href=payload.mirror||'/mirror/index.html';els.adminLink.href=payload.admin||'/mirror/admin/index.html';els.summaryLink.href=payload.summary||'/mirror/data/indexes/summary.json';els.reportLink.href=payload.report||'/mirror/data/indexes/run_report.json';els.runtimeLink.href=payload.runtime||'/mirror/checkpoints/runtime_status.json';els.manualLink.href=payload.manual||'/manual/index.html'}function renderState(payload){renderProduct(payload.product||{});setProfileOptions(payload.profiles||[]);if(!els.outputDir.value)els.outputDir.value=payload.defaults&&payload.defaults.output_dir?payload.defaults.output_dir:'output';if(!els.seedUrl.value){const profile=state.profiles.get(els.profileSelect.value);if(profile&&profile.defaultSeedUrl){els.seedUrl.value=profile.defaultSeedUrl;state.lastSeedSuggestion=profile.defaultSeedUrl}}els.defaultOutput.textContent=payload.defaults&&payload.defaults.output_dir?payload.defaults.output_dir:'output';const run=payload.run||{};const summary=payload.summary||{};const runtime=payload.runtime||{};const report=payload.report||{};const runtimeView=renderRuntime(run,runtime,report);renderSummary(summary,runtimeView.health||{});const running=Boolean(run.running);const stateName=running?((runtimeView.health&&['warning','error'].includes(runtimeView.health.status))?'warning':'running'):(run.last_exit_code===0?'success':(run.last_exit_code!=null?'warning':'ready'));const label=running?'Em execucao':(run.last_exit_code===0?'Concluido':(run.last_exit_code!=null?'Encerrado com alerta':'Pronto'));const detail=running?`${formatNumber(runtimeView.pagesSaved)} paginas salvas, ${formatNumber(runtimeView.pending)} pendentes, ${formatNumber(runtimeView.failures)} falhas.`:(run.last_exit_code!=null?'A ultima execucao terminou. Revise telemetria, logs e relatorio.':'Nenhum crawl em execucao.');els.statusCard.dataset.state=stateName;els.statusBadge.textContent=label;els.statusDetail.textContent=detail;els.commandLine.textContent=run.command_preview||'Nenhum comando ativo.';els.runPid.textContent=run.pid||'-';els.runStarted.textContent=formatDate(run.started_at);els.runFinished.textContent=formatDate(run.finished_at);els.runExit.textContent=run.last_exit_code??'-';els.startRun.disabled=running;els.stopRun.disabled=!running;applyLinks(payload.links||{});renderLogs(payload.logs);if(state.lastRunningState!==null&&state.lastRunningState!==running)showToast(running?'Execucao iniciada com sucesso.':'Execucao finalizada. Confira telemetria, relatorio e logs.');state.lastRunningState=running}function getFormPayload(){return{site_profile:els.profileSelect.value,seed_url:els.seedUrl.value.trim(),output_dir:els.outputDir.value.trim(),max_pages:els.maxPages.value.trim(),workers:els.workers.value,asset_workers:els.assetWorkers.value,rate_limit:els.rateLimit.value,timeout:els.timeout.value,max_retries:els.maxRetries.value,retry_failed_passes:els.retryFailedPasses.value,checkpoint_every:els.checkpointEvery.value,api_bootstrap_mode:els.apiBootstrapMode.value,log_level:els.logLevel.value,fresh:els.fresh.checked,ignore_robots:els.ignoreRobots.checked,no_source:els.noSource.checked}}async function postJson(url,payload){const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload||{})});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'A operacao falhou.');return data}async function fetchState(){const response=await fetch('/api/state',{cache:'no-store'});if(!response.ok)throw new Error('Nao foi possivel carregar o estado da GUI.');renderState(await response.json())}els.profileSelect.addEventListener('change',()=>syncProfileCard());els.form.addEventListener('submit',async event=>{event.preventDefault();try{const result=await postJson('/api/start-run',getFormPayload());showToast(result.message||'Execucao iniciada.');await fetchState()}catch(error){showToast(error.message)}});els.validateProfiles.addEventListener('click',async()=>{try{const result=await postJson('/api/validate-profiles',{});showToast(result.message||'Perfis validados.');await fetchState()}catch(error){showToast(error.message)}});els.stopRun.addEventListener('click',async()=>{try{const result=await postJson('/api/stop-run',{});showToast(result.message||'Sinal de parada enviado.');await fetchState()}catch(error){showToast(error.message)}});async function boot(){try{await fetchState()}catch(error){showToast(error.message)}clearInterval(state.refreshTimer);state.refreshTimer=setInterval(()=>{fetchState().catch(error=>showToast(error.message))},2000)}boot();""".strip()
+
+GUI_CSS = """
+:root {
+  --bg: #f4eee4;
+  --bg-soft: #fbf8f2;
+  --panel: rgba(255, 252, 248, 0.94);
+  --line: rgba(116, 77, 56, 0.16);
+  --ink: #2f221b;
+  --muted: #6a584d;
+  --accent: #8e2f1a;
+  --accent-soft: #f2d2bb;
+  --link: #174d72;
+  --good: #1f7a5c;
+  --warn: #a56609;
+  --bad: #a12d2d;
+  --shadow: 0 18px 42px rgba(79, 53, 37, 0.1);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.85), transparent 42%),
+    linear-gradient(180deg, #f7f0e6 0%, #eef3f1 100%);
+  color: var(--ink);
+  font: 16px/1.55 "Segoe UI", "Source Sans 3", sans-serif;
+}
+a { color: var(--link); }
+button, input, select {
+  font: inherit;
+}
+.studio-shell {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 28px 20px 56px;
+}
+.studio-hero,
+.studio-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+}
+.studio-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr);
+  gap: 18px;
+  padding: 26px;
+}
+.studio-eyebrow {
+  display: inline-flex;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.studio-hero h1 {
+  margin: 10px 0 12px;
+  font: 700 clamp(2rem, 5vw, 3.8rem)/0.98 Georgia, serif;
+  color: var(--accent);
+}
+.studio-lead,
+.studio-card-head p,
+.studio-subtle,
+.studio-note-box p {
+  color: var(--muted);
+}
+.studio-hero-meta,
+.studio-mini-grid,
+.studio-field-grid,
+.studio-run-grid,
+.studio-link-grid {
+  display: grid;
+  gap: 12px;
+}
+.studio-hero-meta {
+  align-content: start;
+}
+.studio-grid {
+  display: grid;
+  grid-template-columns: 1.55fr 1fr 0.95fr;
+  gap: 16px;
+  margin-top: 18px;
+}
+.studio-grid.lower {
+  grid-template-columns: 1.15fr 1fr;
+}
+.studio-card {
+  padding: 20px;
+}
+.studio-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.studio-card h2,
+.studio-profile-box h3 {
+  margin: 0 0 8px;
+  color: var(--accent);
+  font-family: Georgia, serif;
+}
+.studio-badge,
+.log-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 86px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.studio-badge.neutral,
+.log-badge.info {
+  background: rgba(23, 77, 114, 0.12);
+  color: var(--link);
+}
+.studio-badge.success,
+.log-badge.success {
+  background: rgba(31, 122, 92, 0.14);
+  color: var(--good);
+}
+.studio-badge.warning,
+.log-badge.warning {
+  background: rgba(165, 102, 9, 0.15);
+  color: var(--warn);
+}
+.studio-badge.error,
+.log-badge.error {
+  background: rgba(161, 45, 45, 0.14);
+  color: var(--bad);
+}
+.studio-stat,
+.studio-metric,
+.studio-profile-box,
+.studio-note-box,
+.log-line {
+  background: rgba(255, 255, 255, 0.74);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+}
+.studio-stat,
+.studio-metric {
+  padding: 14px 16px;
+}
+.studio-stat strong,
+.studio-metric strong {
+  display: block;
+  font-size: 1.3rem;
+  color: var(--accent);
+}
+.studio-field-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.studio-field {
+  display: grid;
+  gap: 6px;
+}
+.studio-field span,
+.studio-inline-label {
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+.studio-field input,
+.studio-field select {
+  min-height: 48px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--bg-soft);
+  color: var(--ink);
+}
+.studio-advanced {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--line);
+}
+.studio-advanced summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--accent);
+}
+.advanced-grid {
+  margin-top: 14px;
+}
+.studio-switches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 16px;
+  color: var(--muted);
+}
+.studio-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 18px 0 12px;
+}
+.studio-actions button {
+  min-height: 46px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--ink);
+  cursor: pointer;
+}
+.studio-actions .primary {
+  background: var(--accent);
+  color: #fff7f2;
+  border-color: rgba(0, 0, 0, 0.04);
+}
+.studio-actions .danger {
+  background: rgba(161, 45, 45, 0.12);
+  color: var(--bad);
+}
+.studio-command {
+  display: block;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px dashed var(--line);
+  background: rgba(255, 255, 255, 0.66);
+  color: var(--muted);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.studio-profile-box,
+.studio-note-box {
+  padding: 16px;
+}
+.studio-inline-pair {
+  display: grid;
+  gap: 4px;
+  margin-top: 12px;
+}
+.studio-inline-pair code {
+  overflow-wrap: anywhere;
+}
+.studio-link-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 14px;
+}
+.studio-link-grid a {
+  display: block;
+  padding: 11px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+}
+.studio-run-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 16px;
+}
+.studio-run-grid > div {
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.7);
+}
+.log-output {
+  display: grid;
+  gap: 10px;
+  max-height: 680px;
+  overflow: auto;
+}
+.log-line {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: 10px;
+  padding: 12px 14px;
+  align-items: start;
+}
+.log-time {
+  color: var(--muted);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.log-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.log-empty {
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px dashed var(--line);
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.58);
+}
+.toast {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  max-width: 420px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: rgba(255, 252, 248, 0.98);
+  box-shadow: 0 18px 40px rgba(79, 53, 37, 0.2);
+  color: var(--ink);
+}
+.toast.success { border-color: rgba(31, 122, 92, 0.24); }
+.toast.warning { border-color: rgba(165, 102, 9, 0.28); }
+.toast.error { border-color: rgba(161, 45, 45, 0.28); }
+.toast strong { display: block; margin-bottom: 4px; }
+.toast small { display: block; color: var(--muted); margin-top: 6px; }
+@media (max-width: 1120px) {
+  .studio-grid,
+  .studio-grid.lower,
+  .studio-hero {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 760px) {
+  .studio-shell {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+  .studio-field-grid,
+  .studio-link-grid,
+  .studio-run-grid {
+    grid-template-columns: 1fr;
+  }
+  .log-line {
+    grid-template-columns: 1fr;
+  }
+}
+""".strip()
+
+
+GUI_JS = """
+(() => {
+  const state = {
+    profiles: [],
+    selectedProfile: 'auto',
+    timer: null,
+  };
+
+  const ids = [
+    'site-profile', 'seed-url', 'output-dir', 'max-pages', 'workers', 'asset-workers',
+    'rate-limit', 'timeout', 'max-retries', 'retry-failed-passes', 'checkpoint-every',
+    'api-bootstrap-mode', 'log-level', 'fresh', 'ignore-robots', 'no-source', 'start-run',
+    'validate-profiles', 'stop-run', 'status-badge', 'status-detail', 'command-line',
+    'summary-pages', 'summary-assets', 'summary-failures', 'summary-profile', 'summary-health',
+    'run-pid', 'run-started', 'run-finished', 'run-exit', 'mirror-link', 'admin-link',
+    'summary-link', 'report-link', 'runtime-link', 'manual-link', 'profile-title',
+    'profile-description', 'profile-seed', 'runtime-headline', 'runtime-phase',
+    'runtime-pages-saved', 'runtime-pages-attempted', 'runtime-pending', 'runtime-failures',
+    'runtime-sources', 'runtime-rate', 'runtime-updated', 'runtime-message', 'runtime-notes',
+    'toast', 'product-version', 'support-scope', 'entrypoint-main', 'platform-label',
+    'default-output', 'log-output'
+  ];
+
+  const ui = Object.fromEntries(ids.map((id) => [id, document.getElementById(id)]));
+
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;');
+  }
+
+  function text(id, value, fallback = '-') {
+    if (ui[id]) ui[id].textContent = value === undefined || value === null || value === '' ? fallback : String(value);
+  }
+
+  function href(id, value) {
+    if (!ui[id]) return;
+    const disabled = !value;
+    ui[id].href = disabled ? '#' : value;
+    ui[id].ariaDisabled = disabled ? 'true' : 'false';
+    ui[id].tabIndex = disabled ? -1 : 0;
+    ui[id].style.opacity = disabled ? '0.45' : '1';
+    ui[id].style.pointerEvents = disabled ? 'none' : 'auto';
+  }
+
+  function humanizePhase(value) {
+    const map = {
+      starting: 'Preparando',
+      bootstrapping: 'Descoberta inicial',
+      crawling: 'Copiando paginas',
+      retrying: 'Tentando novamente',
+      finalizing: 'Organizando a saida',
+      completed: 'Concluido',
+      failed: 'Interrompido',
+      idle: 'Parado',
+    };
+    return map[String(value || '').toLowerCase()] || (value || 'Parado');
+  }
+
+  function humanizeHealth(value) {
+    const map = {
+      ok: 'Tudo certo',
+      warning: 'Atencao',
+      error: 'Precisa de revisao',
+    };
+    return map[String(value || '').toLowerCase()] || (value || '-');
+  }
+
+  function toastClass(level) {
+    const normalized = String(level || 'info').toLowerCase();
+    if (normalized === 'success') return 'success';
+    if (normalized === 'warning') return 'warning';
+    if (normalized === 'error') return 'error';
+    return 'neutral';
+  }
+
+  function showToast(payload) {
+    if (!ui.toast) return;
+    const message = typeof payload === 'string' ? payload : (payload?.message || payload?.error || 'Atualizacao concluida.');
+    const hint = typeof payload === 'object' ? (payload?.hint || '') : '';
+    const details = typeof payload === 'object' ? (payload?.details || '') : '';
+    ui.toast.className = `toast ${toastClass(payload?.level)}`;
+    ui.toast.innerHTML = `<strong>${escapeHtml(message)}</strong>${hint ? `<div>${escapeHtml(hint)}</div>` : ''}${details ? `<small>${escapeHtml(details)}</small>` : ''}`;
+    ui.toast.hidden = false;
+    window.clearTimeout(ui.toastTimer);
+    ui.toastTimer = window.setTimeout(() => { ui.toast.hidden = true; }, 5000);
+  }
+
+  function selectedProfileObject() {
+    return state.profiles.find((profile) => profile.key === ui['site-profile']?.value) || state.profiles[0] || null;
+  }
+
+  function fillProfiles(profiles, keepSelection = true) {
+    if (!ui['site-profile']) return;
+    const previous = keepSelection ? ui['site-profile'].value : '';
+    ui['site-profile'].innerHTML = '';
+    for (const profile of profiles) {
+      const option = document.createElement('option');
+      option.value = profile.key;
+      option.textContent = `${profile.label} (${profile.key})`;
+      ui['site-profile'].append(option);
+    }
+    const nextValue = profiles.some((profile) => profile.key === previous) ? previous : (profiles[0]?.key || 'auto');
+    ui['site-profile'].value = nextValue;
+    state.selectedProfile = nextValue;
+    updateProfilePanel();
+  }
+
+  function updateProfilePanel() {
+    const profile = selectedProfileObject();
+    if (!profile) {
+      text('profile-title', 'Escolha um perfil');
+      text('profile-description', 'As orientacoes do perfil aparecem aqui.');
+      text('profile-seed', '-');
+      return;
+    }
+
+    text('profile-title', profile.label);
+    text('profile-description', profile.description || 'Sem descricao adicional.');
+    text('profile-seed', profile.default_seed_url || '-');
+    if (ui['seed-url'] && !ui['seed-url'].value && profile.default_seed_url) {
+      ui['seed-url'].value = profile.default_seed_url;
+    }
+  }
+
+  function collectPayload() {
+    return {
+      site_profile: ui['site-profile']?.value || 'auto',
+      seed_url: ui['seed-url']?.value || '',
+      output_dir: ui['output-dir']?.value || 'output',
+      max_pages: ui['max-pages']?.value || '',
+      workers: ui['workers']?.value || '8',
+      asset_workers: ui['asset-workers']?.value || '8',
+      rate_limit: ui['rate-limit']?.value || '2.0',
+      timeout: ui['timeout']?.value || '30',
+      max_retries: ui['max-retries']?.value || '4',
+      retry_failed_passes: ui['retry-failed-passes']?.value || '1',
+      checkpoint_every: ui['checkpoint-every']?.value || '25',
+      api_bootstrap_mode: ui['api-bootstrap-mode']?.value || 'auto',
+      log_level: ui['log-level']?.value || 'INFO',
+      fresh: !!ui['fresh']?.checked,
+      ignore_robots: !!ui['ignore-robots']?.checked,
+      no_source: !!ui['no-source']?.checked,
+    };
+  }
+
+  async function postJson(url, payload = {}) {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw data;
+    }
+    return data;
+  }
+
+  function renderRun(run) {
+    const running = !!run?.running;
+    const badge = ui['status-badge'];
+    if (badge) {
+      badge.textContent = running ? 'Em andamento' : 'Parado';
+      badge.className = `studio-badge ${running ? 'success' : 'neutral'}`;
+    }
+    text('status-detail', running
+      ? 'Execucao iniciada. As mensagens ja estao aparecendo abaixo.'
+      : 'Execucao encerrada. Agora vale revisar o resumo e os detalhes da rodada.');
+    text('command-line', run?.command_preview || 'O comando aparece aqui quando uma rodada comeca.');
+    text('run-pid', run?.pid || '-');
+    text('run-started', run?.started_at || '-');
+    text('run-finished', run?.finished_at || '-');
+    text('run-exit', run?.last_exit_code ?? '-');
+  }
+
+  function renderSummary(summary, report) {
+    text('summary-pages', summary?.pages_saved ?? 0, '0');
+    text('summary-assets', summary?.assets_saved ?? 0, '0');
+    text('summary-failures', summary?.failed_pages ?? 0, '0');
+    text('summary-profile', summary?.site_label || summary?.site_profile || '-', '-');
+    text('summary-health', humanizeHealth(report?.health?.status || ''), '-');
+  }
+
+  function renderRuntime(runtime) {
+    const stats = runtime?.stats || {};
+    const queue = runtime?.queue || {};
+    const notes = runtime?.health?.notes || runtime?.health?.warnings || [];
+    const running = !!runtime?.running;
+    text('runtime-headline', running ? 'Execucao em andamento' : 'Ultima atividade conhecida');
+    text('runtime-phase', humanizePhase(runtime?.phase || 'idle'));
+    text('runtime-pages-saved', stats?.pages_saved ?? 0, '0');
+    text('runtime-pages-attempted', stats?.pages_attempted ?? 0, '0');
+    text('runtime-pending', queue?.pending ?? 0, '0');
+    text('runtime-failures', stats?.pages_failed ?? 0, '0');
+    text('runtime-sources', stats?.source_pages_captured ?? 0, '0');
+    text('runtime-rate', runtime?.run_config?.rate_limit_per_sec ?? '-', '-');
+    text('runtime-updated', runtime?.updated_at || runtime?.generated_at || '-');
+    text('runtime-message', running
+      ? 'O QuickWiki esta atualizando esta area automaticamente.'
+      : 'Quando o espelho rodar, esta area mostra a fase atual e os sinais mais importantes.');
+    text('runtime-notes', Array.isArray(notes) && notes.length ? notes.join(' | ') : 'Sem observacoes por enquanto.');
+  }
+
+  function levelClass(level) {
+    const normalized = String(level || '').toLowerCase();
+    if (normalized === 'warning') return 'warning';
+    if (normalized === 'error' || normalized === 'critical') return 'error';
+    if (normalized === 'success') return 'success';
+    return 'info';
+  }
+
+  function renderLogs(entries, rawLines) {
+    const node = ui['log-output'];
+    if (!node) return;
+    const safeEntries = Array.isArray(entries) && entries.length
+      ? entries
+      : (Array.isArray(rawLines) ? rawLines.map((line) => ({ time: '', level: '', label: 'Texto', message: line })) : []);
+
+    if (!safeEntries.length) {
+      node.innerHTML = '<div class="log-empty">As mensagens da execucao aparecerao aqui.</div>';
+      return;
+    }
+
+    node.innerHTML = safeEntries.slice(-80).reverse().map((entry) => {
+      const level = String(entry.level || entry.label || 'INFO').toUpperCase();
+      const badgeClass = levelClass(level);
+      const time = entry.time || '--:--:--';
+      const label = entry.label || level;
+      const message = entry.message || entry.raw || 'Sem mensagem adicional.';
+      return `
+        <article class="log-line">
+          <div class="log-time">${escapeHtml(time)}</div>
+          <div class="log-badge ${badgeClass}">${escapeHtml(label)}</div>
+          <div class="log-text">${escapeHtml(message)}</div>
+        </article>
+      `;
+    }).join('');
+  }
+
+  function renderLinks(links) {
+    href('mirror-link', links?.mirror || '');
+    href('admin-link', links?.admin || '');
+    href('summary-link', links?.summary || '');
+    href('report-link', links?.report || '');
+    href('runtime-link', links?.runtime || '');
+    href('manual-link', links?.manual || '');
+  }
+
+  function renderProduct(product, defaults) {
+    text('product-version', product?.version || '-');
+    text('platform-label', product?.primary_operator_platform || '-');
+    text('support-scope', product?.supported_profile_keys?.length || 0, '0');
+    text('entrypoint-main', product?.canonical_entrypoint || 'quickwiki');
+    text('default-output', defaults?.output_dir || 'output');
+    if (ui['output-dir'] && !ui['output-dir'].value && defaults?.output_dir) {
+      ui['output-dir'].value = defaults.output_dir;
+    }
+  }
+
+  function renderState(payload) {
+    state.profiles = Array.isArray(payload?.profiles) ? payload.profiles : [];
+    if (state.profiles.length) fillProfiles(state.profiles, true);
+    renderProduct(payload?.product || {}, payload?.defaults || {});
+    renderRun(payload?.run || {});
+    renderSummary(payload?.summary || {}, payload?.report || {});
+    renderRuntime(payload?.runtime || {});
+    renderLinks(payload?.links || {});
+    renderLogs(payload?.log_entries || [], payload?.logs || []);
+  }
+
+  async function refreshState() {
+    const response = await fetch('/api/state');
+    const payload = await response.json();
+    renderState(payload);
+  }
+
+  async function validateProfiles() {
+    try {
+      const payload = await postJson('/api/validate-profiles');
+      showToast(payload);
+      if (Array.isArray(payload?.profiles)) {
+        state.profiles = payload.profiles;
+        fillProfiles(payload.profiles, true);
+      }
+      await refreshState();
+    } catch (errorPayload) {
+      showToast(errorPayload);
+    }
+  }
+
+  async function startRun() {
+    try {
+      const payload = await postJson('/api/start-run', collectPayload());
+      showToast(payload);
+      await refreshState();
+    } catch (errorPayload) {
+      showToast(errorPayload);
+    }
+  }
+
+  async function stopRun() {
+    try {
+      const payload = await postJson('/api/stop-run');
+      showToast(payload);
+      await refreshState();
+    } catch (errorPayload) {
+      showToast(errorPayload);
+    }
+  }
+
+  ui['site-profile']?.addEventListener('change', () => {
+    state.selectedProfile = ui['site-profile'].value;
+    updateProfilePanel();
+  });
+  ui['validate-profiles']?.addEventListener('click', validateProfiles);
+  ui['start-run']?.addEventListener('click', startRun);
+  ui['stop-run']?.addEventListener('click', stopRun);
+
+  refreshState().catch((error) => {
+    showToast({
+      level: 'error',
+      message: 'Nao foi possivel carregar o painel agora.',
+      details: error instanceof Error ? error.message : String(error),
+      hint: 'Atualize a pagina e tente novamente.',
+    });
+  });
+
+  state.timer = window.setInterval(() => {
+    refreshState().catch(() => {});
+  }, 2000);
+})();
+""".strip()

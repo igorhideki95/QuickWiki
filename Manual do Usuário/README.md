@@ -1,6 +1,6 @@
 # Manual do Usuario - QuickWiki
 
-> Guia prático para instalar, validar e operar o QuickWiki na trilha source-first da v1.
+> Guia pratico para instalar, validar e usar o QuickWiki pelo fluxo mais simples e confiavel da versao publica.
 
 ## Melhor forma de abrir
 
@@ -13,7 +13,7 @@ Se quiser a versao visual do manual, abra:
 1. Abra `01 - Instalacao e Preparacao.md`
 2. Depois leia `06 - QuickWiki Studio.md`
 3. Use `02 - Primeiro Espelho.md` para o primeiro teste controlado
-4. Consulte `03 - Perfis, Validacao e Modos.md` para entender perfis oficiais e preview
+4. Consulte `03 - Perfis, Validacao e Modos.md` para entender os perfis oficiais e os modos avancados
 5. Use `04 - Navegacao Offline.md` para revisar a saida
 6. Se algo falhar, va para `05 - Problemas Comuns.md`
 
@@ -21,23 +21,24 @@ Se quiser a versao visual do manual, abra:
 
 ```bash
 python -m pip install .
-quickwiki --validate-site-profiles
-quickwiki --gui
-```
-
-Se `quickwiki` ainda nao estiver no `PATH`, use:
-
-```bash
 python -m quickwiki --validate-site-profiles
 python -m quickwiki --gui
+```
+
+Quando `quickwiki` ja estiver disponivel no `PATH`, voce tambem pode usar:
+
+```bash
+quickwiki --validate-site-profiles
+quickwiki --gui
 ```
 
 ## O que voce vai aprender
 
 - como preparar o ambiente;
-- como usar o comando canonico `quickwiki`;
+- como comecar pelo fluxo mais confiavel com `python -m quickwiki`;
+- como usar o comando canonico `quickwiki` quando ele ja estiver disponivel no `PATH`;
 - como validar os perfis built-in oficiais;
-- como tratar perfis externos como preview via CLI;
+- como usar perfis externos pela CLI quando precisar de um caso mais avancado;
 - como rodar um espelho de teste;
 - como abrir e navegar no resultado offline;
 - como ler os artefatos `summary.json`, `run_report.json` e `runtime_status.json`.
@@ -63,11 +64,11 @@ python -m quickwiki --gui
 
 Este manual considera:
 
-- o comando canonico `quickwiki`;
-- o fallback `python -m quickwiki`;
+- o primeiro uso com `python -m quickwiki`;
+- o comando canonico `quickwiki` quando ele ja estiver disponivel no `PATH`;
 - a compatibilidade com `python run_scraper.py`;
-- o modelo source-first, com `QUICKWIKI_ROOT` quando voce quiser apontar para uma clone especifica ou caminhos customizados;
+- o modelo source-first, com `QUICKWIKI_ROOT` quando voce quiser apontar para um checkout especifico ou caminhos customizados;
 - os perfis built-in como suporte oficial da v1;
-- os perfis externos como preview avancado via CLI;
+- os perfis externos como modo avancado via CLI;
 - a GUI local `QuickWiki Studio`;
 - os artefatos operacionais `runtime_status.json` e `run_report.json`.

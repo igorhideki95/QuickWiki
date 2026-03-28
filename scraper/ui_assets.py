@@ -351,21 +351,31 @@ window.QuickWikiApp = {
         .map(([entry]) => entry);
 
       const visible = needle || selectedCategory ? filtered.slice(0, 250) : filtered.slice(0, 120);
-      countNode.textContent = `${filtered.length} resultado(s)${visible.length < filtered.length ? ` · exibindo os primeiros ${visible.length}` : ''}`;
+      countNode.textContent = `${filtered.length} resultado(s)${visible.length < filtered.length ? ` | mostrando os primeiros ${visible.length}` : ''}`;
+
+      function humanizeFetchSource(value) {
+        const map = {
+          mediawiki_api: 'API da wiki',
+          direct_http: 'Pagina web',
+          unknown: 'Origem nao informada',
+        };
+        const key = String(value || '').toLowerCase();
+        return map[key] || (value || 'Origem nao informada');
+      }
 
       if (!visible.length) {
-        resultsNode.innerHTML = '<div class="mirror-empty">Nenhuma página corresponde aos filtros atuais.</div>';
+        resultsNode.innerHTML = '<div class="mirror-empty">Nenhuma pagina combinou com a sua busca.</div>';
         return;
       }
 
       resultsNode.innerHTML = visible.map((entry) => {
         const chips = [
-          entry.site_profile || 'site',
+          entry.site_profile || 'wiki',
           `${entry.word_count || 0} palavras`,
-          `${entry.reading_time_minutes || 0} min`,
+          `${entry.reading_time_minutes || 0} min de leitura`,
           `${entry.images_count || 0} imagens`,
-          `${entry.wikitext_characters || 0} chars source`,
-          `${entry.fetch_source || 'unknown'}`,
+          `${entry.wikitext_characters || 0} chars de codigo-fonte`,
+          humanizeFetchSource(entry.fetch_source),
           ...(entry.categories || []).slice(0, 3),
           ...(entry.source_templates || []).slice(0, 2),
         ].map((value) => `<span class="mirror-chip">${value}</span>`).join('');
@@ -373,7 +383,7 @@ window.QuickWikiApp = {
         return `
           <article class="mirror-card">
             <h2><a href="${entry.html_path}">${entry.title}</a></h2>
-            <p class="mirror-excerpt">${entry.excerpt || 'Sem resumo disponível.'}</p>
+            <p class="mirror-excerpt">${entry.excerpt || 'Sem resumo disponivel ainda.'}</p>
             <div class="mirror-chips">${chips}</div>
           </article>
         `;

@@ -102,7 +102,7 @@ class QuickWikiCrawler:
     async def run(self) -> dict[str, Any]:
         pending = self._bootstrap_state()
         if not pending:
-            self.logger.warning("Nenhuma URL pendente para processar.")
+            self.logger.warning("Nenhuma pagina ficou pendente para processar.")
             self._finalize_stats()
             self.storage.finalize(
                 self.stats,
@@ -160,7 +160,7 @@ class QuickWikiCrawler:
         )
         self._persist_runtime_status_now("completed")
         self.logger.info(
-            "Execução concluída: %s páginas salvas, %s assets únicos.",
+            "Copia concluida: %s paginas salvas e %s arquivos unicos.",
             self.stats["pages_saved"],
             len(self.storage.assets_by_hash),
         )
@@ -283,7 +283,7 @@ class QuickWikiCrawler:
                 self.stats["failed_pages_recovered"] += 1
 
         self.logger.info(
-            "[worker=%s] Capturado %s | links=%s | imagens=%s",
+            "[worker=%s] Pagina salva: %s | %s links | %s imagens",
             worker_id,
             url,
             len(page.internal_links),
@@ -396,7 +396,7 @@ class QuickWikiCrawler:
             if not isinstance(link_title, str) or not link_title.strip():
                 continue
             canonical = canonicalize_url(
-                f"/wiki/{link_title.strip().replace(' ', '_')}",
+                self._profile_page_path(link_title),
                 url,
                 allowed_domains=self.profile.allowed_domains,
                 allowed_prefix=self.profile.allowed_path_prefix,
@@ -423,7 +423,7 @@ class QuickWikiCrawler:
         title_text = parse_payload.get("title", title)
         title_text = title_text if isinstance(title_text, str) else title
         categories_html = "".join(
-            f"<li><a href=\"/wiki/Categoria:{html.escape(label).replace(' ', '_')}\">{html.escape(label)}</a></li>"
+            f"<li>{html.escape(label)}</li>"
             for label in api_categories
         )
         category_block = (
@@ -437,7 +437,7 @@ class QuickWikiCrawler:
         )
 
         final_url = canonicalize_url(
-            f"/wiki/{title_text.replace(' ', '_')}",
+            self._profile_page_path(title_text),
             url,
             allowed_domains=self.profile.allowed_domains,
             allowed_prefix=self.profile.allowed_path_prefix,
@@ -529,10 +529,10 @@ class QuickWikiCrawler:
         if not self.config.should_bootstrap_from_api():
             return
 
-        self.logger.info("Bootstrap de cobertura via MediaWiki API habilitado.")
+        self.logger.info("Descoberta inicial por API ativada para ampliar a cobertura.")
         namespace_ids = await self._discover_namespace_ids(client)
         if not namespace_ids:
-            self.logger.warning("Não foi possível descobrir namespaces pela API; seguindo apenas com BFS.")
+            self.logger.warning("Nao foi possivel descobrir namespaces pela API. O espelho vai seguir apenas com a fila atual.")
             return
 
         api_url = self._mediawiki_api_url()
@@ -567,7 +567,7 @@ class QuickWikiCrawler:
                     if not isinstance(title, str) or not title.strip():
                         continue
                     canonical = canonicalize_url(
-                        f"/wiki/{title.strip().replace(' ', '_')}",
+                        self._profile_page_path(title),
                         self.config.seed_url,
                         allowed_domains=self.profile.allowed_domains,
                         allowed_prefix=self.profile.allowed_path_prefix,
@@ -589,7 +589,7 @@ class QuickWikiCrawler:
 
             if namespace_discovered:
                 self.logger.info(
-                    "Namespace %s adicionou %s páginas ao frontier.",
+                    "Namespace %s adicionou %s paginas novas a fila inicial.",
                     namespace_id,
                     namespace_discovered,
                 )
@@ -598,9 +598,9 @@ class QuickWikiCrawler:
             self.stats["api_seed_urls_discovered"] += total_discovered
 
         if total_discovered:
-            self.logger.info("Bootstrap API concluiu com %s páginas extras descobertas.", total_discovered)
+            self.logger.info("A descoberta inicial encontrou %s paginas extras.", total_discovered)
         else:
-            self.logger.info("Bootstrap API não encontrou novas páginas além do frontier atual.")
+            self.logger.info("A descoberta inicial nao encontrou paginas novas alem da fila atual.")
 
     async def _discover_namespace_ids(self, client: httpx.AsyncClient) -> list[int]:
         response = await self._fetch_with_retry(
@@ -794,7 +794,7 @@ class QuickWikiCrawler:
 
                 content_type = response.headers.get("content-type", "").lower()
                 if expect_html and "text/html" not in content_type:
-                    self.logger.debug("Ignorando não-HTML em %s (%s)", url, content_type)
+                    self.logger.debug("Resposta ignorada por nao ser HTML em %s (%s)", url, content_type)
                     return None
 
                 return response
@@ -853,7 +853,7 @@ class QuickWikiCrawler:
             self.stats["retry_rounds_completed"] = retry_round
 
         self.logger.info(
-            "Retry round %s: reenfileirando %s páginas que falharam.",
+            "Nova tentativa %s: recolocando %s paginas que tinham falhado.",
             retry_round,
             len(failed_urls),
         )
@@ -861,6 +861,11 @@ class QuickWikiCrawler:
 
     def _mediawiki_api_url(self) -> str:
         return self.profile.api_url()
+
+    def _profile_page_path(self, title: str) -> str:
+        normalized_title = title.strip().replace(" ", "_")
+        prefix = self.profile.allowed_path_prefix.rstrip("/") + "/"
+        return f"{prefix}{normalized_title}"
 
     def _bootstrap_state(self) -> list[str]:
         seed = canonicalize_url(
@@ -870,7 +875,7 @@ class QuickWikiCrawler:
             allowed_prefix=self.profile.allowed_path_prefix,
         )
         if not seed:
-            raise ValueError(f"URL inicial inválida para o domínio permitido: {self.config.seed_url}")
+            raise ValueError(f"Link inicial invalido para o dominio permitido: {self.config.seed_url}")
 
         if not self.config.resume:
             self.enqueued = {seed}
@@ -904,7 +909,7 @@ class QuickWikiCrawler:
             if self.enqueue_soft_cap is not None:
                 pending_urls = pending_urls[: self.enqueue_soft_cap]
             self.logger.info(
-                "Retomando de checkpoint: %s visitadas, %s pendentes.",
+                "Retomando do ultimo progresso salvo: %s paginas visitadas e %s ainda pendentes.",
                 len(self.visited),
                 len(pending_urls),
             )
@@ -962,15 +967,15 @@ class QuickWikiCrawler:
             await self.rate_limiter.wait()
             response = await client.get(robots_url)
             if response.status_code >= 400:
-                self.logger.warning("Não foi possível ler robots.txt (%s)", response.status_code)
+                self.logger.warning("Nao foi possivel ler o robots.txt (%s).", response.status_code)
                 self.robot_rules = None
                 return
             parser = robotparser.RobotFileParser()
             parser.parse(response.text.splitlines())
             self.robot_rules = parser
-            self.logger.info("robots.txt carregado de %s", robots_url)
+            self.logger.info("robots.txt carregado com sucesso de %s", robots_url)
         except httpx.HTTPError as exc:
-            self.logger.warning("Falha ao carregar robots.txt (%r). Continuando.", exc)
+            self.logger.warning("Falha ao carregar o robots.txt (%r). O espelho vai continuar.", exc)
             self.robot_rules = None
 
     def _finalize_stats(self) -> None:

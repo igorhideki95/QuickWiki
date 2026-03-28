@@ -10,6 +10,7 @@ from scraper.gui_server import (
     build_missing_project_docs_page,
     build_scraper_subprocess_command,
     normalize_gui_run_request,
+    parse_log_entry,
     resolve_gui_project_doc,
     safe_path_join,
 )
@@ -58,14 +59,16 @@ class GuiServerTests(unittest.TestCase):
     def test_normalize_gui_run_request_rejects_invalid_modes(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             project_root = Path(tempdir)
-            with self.assertRaisesRegex(ValueError, "bootstrap"):
+            with self.assertRaisesRegex(ValueError, "descoberta"):
                 normalize_gui_run_request({"api_bootstrap_mode": "bad"}, project_root)
-            with self.assertRaisesRegex(ValueError, "log"):
+            with self.assertRaisesRegex(ValueError, "detalhe"):
                 normalize_gui_run_request({"log_level": "TRACE"}, project_root)
 
     def test_build_scraper_subprocess_command_contains_selected_flags(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
             project_root = Path(tempdir)
+            custom_profile_file = project_root / "custom-profile.json"
+            custom_profile_file.write_text("{}", encoding="utf-8")
             request = normalize_gui_run_request(
                 {
                     "site_profile": "tibiawiki_br",
@@ -79,16 +82,55 @@ class GuiServerTests(unittest.TestCase):
                 project_root,
             )
 
-        command = build_scraper_subprocess_command(request, python_executable="python")
+        command = build_scraper_subprocess_command(
+            request,
+            python_executable="python",
+            profiles_dir=(project_root / "profiles").resolve(),
+            site_profile_files=(custom_profile_file.resolve(),),
+        )
         self.assertEqual(command[:3], ["python", "-m", "quickwiki"])
         self.assertIn("--site-profile", command)
         self.assertIn("tibiawiki_br", command)
+        self.assertIn("--profiles-dir", command)
+        self.assertIn(str((project_root / "profiles").resolve()), command)
+        self.assertIn("--site-profile-file", command)
+        self.assertIn(str(custom_profile_file.resolve()), command)
         self.assertIn("--seed-url", command)
         self.assertIn("--max-pages", command)
         self.assertIn("--fresh", command)
         self.assertIn("--ignore-robots", command)
         self.assertIn("--no-source", command)
         self.assertIn(str((project_root / "mirror-output").resolve()), command)
+
+    def test_gui_app_loads_extra_profile_files(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            project_root = Path(tempdir)
+            bundled_profiles_dir = Path(__file__).resolve().parent.parent / "scraper" / "bundled" / "profiles"
+            extra_profile_file = project_root / "custom-profile.json"
+            extra_profile_file.write_text(
+                json.dumps(
+                    {
+                        "key": "custom_profile",
+                        "label": "Custom Profile",
+                        "description": "Perfil extra para a GUI.",
+                        "default_seed_url": "https://example.com/articles/Home",
+                        "allowed_domains": ["example.com"],
+                        "allowed_path_prefix": "/articles/",
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            app = QuickWikiGuiApp(
+                project_root,
+                profiles_dir=bundled_profiles_dir,
+                site_profile_files=(extra_profile_file,),
+                docs_root=None,
+                manual_root=None,
+            )
+            state = app.state_payload()
+
+        self.assertIn("custom_profile", {profile["key"] for profile in state["profiles"]})
 
     def test_safe_path_join_blocks_directory_traversal(self) -> None:
         with tempfile.TemporaryDirectory() as tempdir:
@@ -189,6 +231,34 @@ class GuiServerTests(unittest.TestCase):
 
         self.assertIn("QUICKWIKI_ROOT", page)
         self.assertIn("documentacao do projeto", page)
+
+    def test_parse_log_entry_supports_structured_terminal_lines(self) -> None:
+        entry = parse_log_entry("12:44:11 | INFO    | Studio | Espelho iniciado.")
+
+        self.assertEqual(entry["kind"], "structured")
+        self.assertEqual(entry["level"], "INFO")
+        self.assertEqual(entry["time"], "12:44:11")
+        self.assertEqual(entry["label"], "Studio")
+        self.assertEqual(entry["message"], "Espelho iniciado.")
+
+    def test_parse_log_entry_supports_file_lines(self) -> None:
+        entry = parse_log_entry("2026-03-28 12:44:11 | WARNING | quickwiki.scraper | Algo chamou atenção")
+
+        self.assertEqual(entry["kind"], "file")
+        self.assertEqual(entry["level"], "WARNING")
+        self.assertEqual(entry["label"], "quickwiki.scraper")
+
+    def test_gui_state_exposes_visual_log_entries(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            project_root = Path(tempdir)
+            profiles_dir = Path(__file__).resolve().parent.parent / "scraper" / "bundled" / "profiles"
+            app = QuickWikiGuiApp(project_root, profiles_dir=profiles_dir, docs_root=None, manual_root=None)
+            app.logs.append("12:44:11 | INFO    | Studio | Espelho iniciado.")
+
+            state = app.state_payload()
+
+        self.assertIn("log_entries", state)
+        self.assertEqual(state["log_entries"][0]["label"], "Studio")
 
 
 if __name__ == "__main__":

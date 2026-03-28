@@ -10,6 +10,13 @@ from pathlib import Path
 from typing import Any
 
 from .models import PageDocument
+from .presentation import (
+    first_health_note,
+    humanize_fetch_source_label,
+    humanize_health,
+    humanize_health_label,
+    humanize_public_key,
+)
 from .reporting import build_run_report, summarize_failed_pages
 from .site_profiles import WikiSiteProfile
 from .ui_assets import MIRROR_INDEX_JS, build_mirror_css
@@ -483,8 +490,8 @@ class StorageManager:
 
     def _write_landing_page(self, summary: dict[str, Any], run_report: dict[str, Any]) -> None:
         health = run_report.get("health", {}) if isinstance(run_report.get("health"), dict) else {}
-        health_status = _humanize_health_status(str(health.get("status", "ok")))
-        health_note = _first_report_note(health)
+        health_status = humanize_health(str(health.get("status", "ok")))
+        health_note = first_health_note(health)
         version = html.escape(str(summary.get("quickwiki_version", QUICKWIKI_VERSION)))
         page = f"""<!doctype html>
 <html lang="pt-BR">
@@ -499,25 +506,25 @@ class StorageManager:
 <body>
   <main class="mirror-shell">
     <section class="mirror-hero">
-      <span class="mirror-eyebrow">Espelho offline multi-wiki</span>
+      <span class="mirror-eyebrow">Seu espelho offline</span>
       <div>
         <h1 class="mirror-title">QuickWiki</h1>
         <p class="mirror-meta-line">
-          Release publica source-first focada nos perfis oficiais incluidos e pronta para navegacao offline completa.
+          Esta copia local esta pronta para leitura, busca e consulta sem depender do site original.
         </p>
         <p class="mirror-meta-line"><strong>Versao:</strong> {version}</p>
-        <p class="mirror-meta-line"><strong>Perfil ativo:</strong> {html.escape(str(summary.get("site_label") or summary.get("site_profile") or "desconhecido"))}</p>
-        <p class="mirror-meta-line"><strong>Saúde operacional:</strong> {html.escape(health_status)}{(" | " + html.escape(health_note)) if health_note else ""}</p>
+        <p class="mirror-meta-line"><strong>Perfil em uso:</strong> {html.escape(str(summary.get("site_label") or summary.get("site_profile") or "desconhecido"))}</p>
+        <p class="mirror-meta-line"><strong>Resumo da execucao:</strong> {html.escape(health_status)}{(" | " + html.escape(health_note)) if health_note else ""}</p>
       </div>
       <div class="mirror-summary">
-        <div class="mirror-stat"><strong>{summary["pages_saved"]}</strong>Páginas salvas</div>
-        <div class="mirror-stat"><strong>{summary["assets_saved"]}</strong>Assets únicos</div>
-        <div class="mirror-stat"><strong>{summary["categories_indexed"]}</strong>Categorias indexadas</div>
-        <div class="mirror-stat"><strong>{summary["failed_pages"]}</strong>Falhas</div>
+        <div class="mirror-stat"><strong>{summary["pages_saved"]}</strong>Paginas salvas</div>
+        <div class="mirror-stat"><strong>{summary["assets_saved"]}</strong>Arquivos unicos</div>
+        <div class="mirror-stat"><strong>{summary["categories_indexed"]}</strong>Categorias</div>
+        <div class="mirror-stat"><strong>{summary["failed_pages"]}</strong>Pendencias</div>
       </div>
       <div class="mirror-controls">
         <label>
-          <input class="mirror-input" id="search" placeholder="Buscar por título, headings, excerpt, categoria ou template..." autocomplete="off">
+          <input class="mirror-input" id="search" placeholder="Buscar por titulo, trecho, categoria ou assunto..." autocomplete="off">
         </label>
         <label>
           <select class="mirror-select" id="category">
@@ -526,20 +533,20 @@ class StorageManager:
         </label>
       </div>
       <div class="mirror-links">
-        <a href="data/indexes/pages_manifest.json">Manifesto das páginas</a>
-        <a href="data/indexes/backlinks.json">Backlinks</a>
+        <a href="data/indexes/pages_manifest.json">Lista completa de paginas</a>
+        <a href="data/indexes/backlinks.json">Links entre paginas</a>
         <a href="data/indexes/categories.json">Categorias</a>
-        <a href="data/indexes/duplicate_content.json">Duplicados</a>
-        <a href="data/indexes/failed_pages.json">Falhas</a>
-        <a href="data/indexes/run_report.json">Relatório da execução</a>
-        <a href="checkpoints/runtime_status.json">Status operacional</a>
-        <a href="admin/index.html">QuickWiki Admin</a>
+        <a href="data/indexes/duplicate_content.json">Conteudos parecidos</a>
+        <a href="data/indexes/failed_pages.json">Paginas com falha</a>
+        <a href="data/indexes/run_report.json">Detalhes da execucao</a>
+        <a href="checkpoints/runtime_status.json">Status da execucao</a>
+        <a href="admin/index.html">Area tecnica</a>
       </div>
       <div class="mirror-meta-line">Gerado em {html.escape(summary["generated_at"])}</div>
     </section>
 
     <div class="mirror-toolbar">
-      <div class="mirror-result-count" id="result-count">Carregando índice...</div>
+      <div class="mirror-result-count" id="result-count">Preparando lista de paginas...</div>
     </div>
 
     <section class="mirror-results" id="results"></section>
@@ -567,8 +574,8 @@ class StorageManager:
             f"""
             <section class="mirror-admin-card">
               <h2>{html.escape(_humanize_key(name))}</h2>
-              <small>{len(values)} seletor(es) configurado(s)</small>
-              <code class="mirror-admin-code">{html.escape("\n".join(values) or "Nenhum seletor configurado.")}</code>
+              <small>{len(values)} regra(s) configurada(s)</small>
+              <code class="mirror-admin-code">{html.escape("\n".join(values) or "Nenhuma regra configurada.")}</code>
             </section>
             """
             for name, values in selectors.items()
@@ -577,15 +584,15 @@ class StorageManager:
         if not selector_sections:
             selector_sections = """
             <section class="mirror-admin-card">
-              <h2>Seletores</h2>
-              <div class="mirror-empty">Nenhum seletor configurado para este perfil.</div>
+              <h2>Regras do perfil</h2>
+              <div class="mirror-empty">Nenhuma regra foi registrada para este perfil.</div>
             </section>
             """
 
         theme_chips = "".join(
             f'<span class="mirror-chip">{html.escape(key)}: {html.escape(value)}</span>'
             for key, value in sorted(theme.items())
-        ) or '<span class="mirror-chip">Sem overrides de tema</span>'
+        ) or '<span class="mirror-chip">Sem ajuste visual extra</span>'
         file_rows = "".join(
             f'<li><strong>{html.escape(_humanize_key(key))}:</strong> '
             f'<a href="{html.escape(_admin_file_href(str(value)))}">{html.escape(str(value))}</a></li>'
@@ -603,61 +610,61 @@ class StorageManager:
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>QuickWiki Admin</title>
+  <title>Visao tecnica do espelho</title>
   <link rel="stylesheet" href="../static/mirror.css">
 </head>
 <body>
   <main class="mirror-shell">
     <section class="mirror-hero">
-      <span class="mirror-eyebrow">QuickWiki Admin</span>
+      <span class="mirror-eyebrow">Area tecnica</span>
       <div>
-        <h1 class="mirror-title">Painel do perfil ativo</h1>
+        <h1 class="mirror-title">Visao tecnica do espelho</h1>
         <p class="mirror-meta-line">
-          Ambiente preparado para adicionar novas wikis por JSON, validar seletores e manter o visual do espelho mais leve e maleável.
+          Esta area reune o perfil usado, os arquivos principais e os sinais mais importantes da ultima execucao.
         </p>
       </div>
       <p class="mirror-meta-line"><strong>Versao:</strong> {html.escape(str(summary.get("quickwiki_version", QUICKWIKI_VERSION)))}</p>
-      <p class="mirror-meta-line"><strong>Suporte oficial v1:</strong> perfis incluidos no repositorio. Perfis externos seguem em preview via CLI.</p>
+      <p class="mirror-meta-line"><strong>Perfis oficiais:</strong> os perfis incluidos no projeto ja estao prontos para uso. Perfis extras continuam disponiveis pela CLI.</p>
       <div class="mirror-summary">
-        <div class="mirror-stat"><strong>{html.escape(str(summary.get("pages_saved", 0)))}</strong>Páginas</div>
-        <div class="mirror-stat"><strong>{html.escape(str(summary.get("assets_saved", 0)))}</strong>Assets</div>
-        <div class="mirror-stat"><strong>{html.escape(str(summary.get("failed_pages", 0)))}</strong>Falhas</div>
-        <div class="mirror-stat"><strong>{html.escape(str(stats.get("source_pages_captured", 0)))}</strong>Sources</div>
+        <div class="mirror-stat"><strong>{html.escape(str(summary.get("pages_saved", 0)))}</strong>Paginas</div>
+        <div class="mirror-stat"><strong>{html.escape(str(summary.get("assets_saved", 0)))}</strong>Arquivos</div>
+        <div class="mirror-stat"><strong>{html.escape(str(summary.get("failed_pages", 0)))}</strong>Pendencias</div>
+        <div class="mirror-stat"><strong>{html.escape(str(stats.get("source_pages_captured", 0)))}</strong>Paginas com codigo</div>
       </div>
       <div class="mirror-admin-actions">
-        <a href="../index.html">Abrir home offline</a>
-        <a href="../data/indexes/profile_diagnostics.json">JSON do perfil</a>
-        <a href="../data/indexes/summary.json">Resumo do crawl</a>
-        <a href="../data/indexes/run_report.json">Relatório da execução</a>
-        <a href="../data/indexes/pages_manifest.json">Manifesto</a>
+        <a href="../index.html">Abrir pagina inicial</a>
+        <a href="../data/indexes/profile_diagnostics.json">Diagnostico do perfil</a>
+        <a href="../data/indexes/summary.json">Resumo da execucao</a>
+        <a href="../data/indexes/run_report.json">Detalhes da execucao</a>
+        <a href="../data/indexes/pages_manifest.json">Lista de paginas</a>
       </div>
     </section>
 
     <section class="mirror-admin-grid" style="margin-top:18px">
       <section class="mirror-admin-card">
-        <h2>Perfil</h2>
-        <small>Identidade e origem do perfil declarativo carregado</small>
+        <h2>Perfil em uso</h2>
+        <small>Identidade, origem e regras principais do perfil carregado.</small>
         <code class="mirror-admin-code">{html.escape(_format_profile_block(profile))}</code>
       </section>
       <section class="mirror-admin-card">
         <h2>Tema</h2>
-        <small>Overrides visuais do perfil ativo</small>
+        <small>Cores e sinais visuais usados neste espelho.</small>
         <div class="mirror-chips">{theme_chips}</div>
       </section>
       <section class="mirror-admin-card">
-        <h2>Arquivos</h2>
-        <small>Pontos úteis para inspeção e manutenção</small>
+        <h2>Arquivos uteis</h2>
+        <small>Atalhos para revisar a saida gerada.</small>
         <ul class="mirror-link-list">{file_rows or '<li>Nenhum arquivo adicional registrado.</li>'}</ul>
       </section>
       <section class="mirror-admin-card">
-        <h2>Saúde operacional</h2>
-        <small>Sinais rápidos do último crawl</small>
+        <h2>Resumo da execucao</h2>
+        <small>Sinais rapidos da ultima rodada salva.</small>
         <code class="mirror-admin-code">{html.escape(_format_run_health_block(health))}</code>
       </section>
     </section>
 
     <section class="mirror-toolbar">
-      <div class="mirror-result-count">Saúde do espelho e capacidade de manutenção</div>
+      <div class="mirror-result-count">Visao tecnica do espelho e do perfil escolhido</div>
     </section>
 
     <section class="mirror-summary" style="margin-bottom:18px">
@@ -718,14 +725,14 @@ def _build_html_document(
     local_source_path_override: str = "",
 ) -> str:
     payload = page.to_dict() if isinstance(page, PageDocument) else page
-    title_text = str(payload.get("title", "Sem título"))
+    title_text = str(payload.get("title", "Sem titulo"))
     source_url_text = str(payload.get("url", ""))
     categories_list = [
         str(category) for category in payload.get("categories", []) if isinstance(category, str) and category.strip()
     ]
-    excerpt_text = str(payload.get("excerpt") or "Sem resumo disponível.")
+    excerpt_text = str(payload.get("excerpt") or "Sem resumo disponivel ainda.")
     fetched_at = str(payload.get("fetched_at", ""))
-    fetch_source = str(payload.get("fetch_source", "unknown"))
+    fetch_source = humanize_fetch_source_label(str(payload.get("fetch_source", "unknown")))
     source_edit_url_text = str(payload.get("source_edit_url", ""))
     source_raw_url_text = str(payload.get("source_raw_url", ""))
     source_templates = [
@@ -740,11 +747,11 @@ def _build_html_document(
     title = html.escape(title_text)
     source_url = html.escape(source_url_text)
     categories = "".join(f'<span class="mirror-chip">{html.escape(category)}</span>' for category in categories_list) or (
-        '<span class="mirror-chip">Sem categorias</span>'
+        '<span class="mirror-chip">Sem categorias registradas</span>'
     )
     excerpt = html.escape(excerpt_text)
-    outgoing_section = _build_link_section("Links internos", outgoing_links or [], is_external=False)
-    incoming_section = _build_link_section("Backlinks", incoming_links or [], is_external=False)
+    outgoing_section = _build_link_section("Links desta pagina", outgoing_links or [], is_external=False)
+    incoming_section = _build_link_section("Paginas que apontam para ca", incoming_links or [], is_external=False)
     external_section = _build_link_section(
         "Links externos",
         [{"title": link, "url": link} for link in (featured_external_links or [])],
@@ -769,15 +776,15 @@ def _build_html_document(
 <body class="mirror-page">
   <div class="mirror-page-shell">
     <div class="mirror-topbar">
-      <a href="{html.escape(home_relative)}">Voltar ao índice offline</a>
-      <a href="{source_url}">Abrir página original</a>
+      <a href="{html.escape(home_relative)}">Voltar para o espelho</a>
+      <a href="{source_url}">Abrir original online</a>
     </div>
     <h1 class="mirror-page-title">{title}</h1>
     <div class="mirror-meta">
       <div class="mirror-excerpt">{excerpt}</div>
-      <div><strong>Fonte:</strong> <a href="{source_url}">{source_url}</a></div>
-      <div><strong>Capturado em:</strong> {html.escape(fetched_at)} | <strong>Origem da captura:</strong> {html.escape(fetch_source)}</div>
-      <div><strong>Tamanho:</strong> {word_count} palavras | <strong>Leitura:</strong> {reading_time} min | <strong>Imagens:</strong> {images_count} | <strong>Wikitext:</strong> {wikitext_characters} chars</div>
+      <div><strong>Pagina original:</strong> <a href="{source_url}">{source_url}</a></div>
+      <div><strong>Salvo em:</strong> {html.escape(fetched_at)} | <strong>Como esta pagina foi coletada:</strong> {html.escape(fetch_source)}</div>
+      <div><strong>Tamanho estimado:</strong> {word_count} palavras | <strong>Leitura:</strong> {reading_time} min | <strong>Imagens:</strong> {images_count} | <strong>Texto-fonte:</strong> {wikitext_characters} chars</div>
       <div class="mirror-chips">{categories}</div>
     </div>
     <div class="mirror-layout">
@@ -801,12 +808,12 @@ def _build_link_section(title: str, entries: list[dict[str, Any]], *, is_externa
     if not entries:
         return (
             f'<section class="mirror-side-card"><h2>{html.escape(title)}</h2>'
-            '<div class="mirror-side-empty">Nenhum link disponível.</div></section>'
+            '<div class="mirror-side-empty">Nenhum link disponivel.</div></section>'
         )
 
     rows = []
     for entry in entries:
-        label = html.escape(str(entry.get("title") or entry.get("url") or "Sem título"))
+        label = html.escape(str(entry.get("title") or entry.get("url") or "Sem titulo"))
         target = str(entry.get("url") or "")
         href = entry.get("html_path") if not is_external else target
         if not isinstance(href, str) or not href:
@@ -816,7 +823,7 @@ def _build_link_section(title: str, entries: list[dict[str, Any]], *, is_externa
     if not rows:
         return (
             f'<section class="mirror-side-card"><h2>{html.escape(title)}</h2>'
-            '<div class="mirror-side-empty">Nenhum link disponível.</div></section>'
+            '<div class="mirror-side-empty">Nenhum link disponivel.</div></section>'
         )
     return (
         f'<section class="mirror-side-card"><h2>{html.escape(title)}</h2>'
@@ -834,19 +841,23 @@ def _build_source_section(
 ) -> str:
     links: list[str] = []
     if local_source_path:
-        links.append(f'<li><a href="{html.escape(local_source_path)}">Abrir wikitext salvo</a></li>')
+        links.append(f'<li><a href="{html.escape(local_source_path)}">Abrir copia local do texto-fonte</a></li>')
     if source_edit_url:
-        links.append(f'<li><a href="{html.escape(source_edit_url)}">Abrir "Ver código fonte"</a></li>')
+        links.append(f'<li><a href="{html.escape(source_edit_url)}">Ver texto-fonte na wiki</a></li>')
     if source_raw_url:
-        links.append(f'<li><a href="{html.escape(source_raw_url)}">Abrir versão raw</a></li>')
+        links.append(f'<li><a href="{html.escape(source_raw_url)}">Abrir versao bruta</a></li>')
 
     template_chips = "".join(
         f'<span class="mirror-chip">{html.escape(template_name)}</span>' for template_name in source_templates[:12]
-    ) or '<span class="mirror-chip">Sem templates detectados</span>'
-    links_markup = f'<ul class="mirror-link-list">{"".join(links)}</ul>' if links else '<div class="mirror-side-empty">Sem links de source disponíveis.</div>'
+    ) or '<span class="mirror-chip">Sem modelos detectados</span>'
+    links_markup = (
+        f'<ul class="mirror-link-list">{"".join(links)}</ul>'
+        if links
+        else '<div class="mirror-side-empty">Nenhum atalho de texto-fonte disponivel.</div>'
+    )
     return (
-        '<section class="mirror-side-card"><h2>Código-fonte wiki</h2>'
-        f'<div class="mirror-side-empty">{wikitext_characters} caracteres capturados do source da página.</div>'
+        '<section class="mirror-side-card"><h2>Codigo-fonte da wiki</h2>'
+        f'<div class="mirror-side-empty">{wikitext_characters} caracteres salvos do texto-fonte desta pagina.</div>'
         f"{links_markup}"
         f'<div class="mirror-chips" style="margin-top:10px">{template_chips}</div>'
         "</section>"
@@ -949,36 +960,19 @@ def _page_reference(
 
 
 def _humanize_key(value: str) -> str:
-    return value.replace("_", " ").strip().title()
-
-
-def _humanize_health_status(value: str) -> str:
-    mapping = {
-        "ok": "Estavel",
-        "warning": "Atencao",
-        "error": "Critico",
-    }
-    return mapping.get(value.strip().lower(), value.strip().title())
-
-
-def _first_report_note(health: dict[str, Any]) -> str:
-    for bucket in ("warnings", "notes"):
-        values = health.get(bucket, [])
-        if isinstance(values, list) and values:
-            return str(values[0])
-    return ""
+    return humanize_public_key(value)
 
 
 def _format_run_health_block(health: dict[str, Any]) -> str:
     warnings = health.get("warnings", []) if isinstance(health.get("warnings"), list) else []
     notes = health.get("notes", []) if isinstance(health.get("notes"), list) else []
     metrics = health.get("metrics", {}) if isinstance(health.get("metrics"), dict) else {}
-    rows = [f"status: {_humanize_health_status(str(health.get('status', 'ok')))}"]
-    rows.append(f"failure_rate: {metrics.get('failure_rate', 0)}")
-    rows.append(f"source_capture_rate: {metrics.get('source_capture_rate', 0)}")
-    rows.append(f"retry_recovery_rate: {metrics.get('retry_recovery_rate', 0)}")
-    rows.append("warnings: " + (" | ".join(str(value) for value in warnings) if warnings else "nenhum"))
-    rows.append("notes: " + (" | ".join(str(value) for value in notes) if notes else "nenhuma"))
+    rows = [f"situacao: {humanize_health_label(str(health.get('status', 'ok')))}"]
+    rows.append(f"taxa_de_falhas: {metrics.get('failure_rate', 0)}")
+    rows.append(f"cobertura_codigo_fonte: {metrics.get('source_capture_rate', 0)}")
+    rows.append(f"recuperacao_novas_tentativas: {metrics.get('retry_recovery_rate', 0)}")
+    rows.append("alertas: " + (" | ".join(str(value) for value in warnings) if warnings else "nenhum"))
+    rows.append("observacoes: " + (" | ".join(str(value) for value in notes) if notes else "nenhuma"))
     return "\n".join(rows)
 
 
@@ -1012,9 +1006,9 @@ def _format_profile_block(profile: dict[str, Any]) -> str:
         "api_path",
         "definition_path",
     ):
-        rows.append(f"{key}: {profile.get(key, '')}")
+        rows.append(f"{humanize_public_key(key)}: {profile.get(key, '')}")
     domains = profile.get("allowed_domains", [])
-    rows.append("allowed_domains: " + ", ".join(str(domain) for domain in domains))
+    rows.append("Dominios permitidos: " + ", ".join(str(domain) for domain in domains))
     return "\n".join(rows)
 
 

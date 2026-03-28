@@ -114,6 +114,100 @@ class CrawlerRuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(payload["source_edit_url"].endswith("Amber_Sabre&action=edit"))
         self.assertTrue(payload["source_raw_url"].endswith("Amber_Sabre&action=raw"))
 
+    async def test_fetch_page_via_api_uses_profile_allowed_path_prefix(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            profiles_dir = Path(tempdir)
+            (profiles_dir / "custom_profile.json").write_text(
+                json.dumps(
+                    {
+                        "key": "custom_profile",
+                        "label": "Custom Profile",
+                        "description": "Perfil com prefixo nao padrao.",
+                        "default_seed_url": "https://example.com/articles/Home",
+                        "allowed_domains": ["example.com"],
+                        "allowed_path_prefix": "/articles/",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            crawler = QuickWikiCrawler(
+                ScraperConfig(
+                    seed_url="https://example.com/articles/Home",
+                    site_profile="custom_profile",
+                    profiles_dir=profiles_dir,
+                    output_dir=self.tempdir / "custom-output",
+                    workers=1,
+                    asset_workers_per_page=1,
+                    max_retries=0,
+                )
+            )
+            api_payload = {
+                "parse": {
+                    "title": "Test Page",
+                    "text": {"*": "<p>Conteudo</p>"},
+                    "links": [{"*": "Linked Page"}],
+                    "categories": [{"*": "Rare Loot"}],
+                    "templates": [{"*": "Infobox"}],
+                }
+            }
+            response = httpx.Response(
+                200,
+                content=json.dumps(api_payload).encode("utf-8"),
+                headers={"content-type": "application/json"},
+                request=httpx.Request("GET", crawler.profile.api_url()),
+            )
+            crawler._fetch_with_retry = AsyncMock(return_value=response)
+
+            payload = await crawler._fetch_page_via_api(object(), "https://example.com/articles/Home")
+
+        self.assertIsNotNone(payload)
+        self.assertEqual(payload["final_url"], "https://example.com/articles/Test_Page")
+        self.assertEqual(payload["api_links"], ["https://example.com/articles/Linked_Page"])
+        self.assertIn("Rare Loot", payload["html"])
+        self.assertNotIn("/wiki/", payload["html"])
+        self.assertNotIn("Categoria:", payload["html"])
+
+    async def test_bootstrap_from_mediawiki_api_uses_profile_allowed_path_prefix(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            profiles_dir = Path(tempdir)
+            (profiles_dir / "custom_profile.json").write_text(
+                json.dumps(
+                    {
+                        "key": "custom_profile",
+                        "label": "Custom Profile",
+                        "description": "Perfil com prefixo nao padrao.",
+                        "default_seed_url": "https://example.com/articles/Home",
+                        "allowed_domains": ["example.com"],
+                        "allowed_path_prefix": "/articles/",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            crawler = QuickWikiCrawler(
+                ScraperConfig(
+                    seed_url="https://example.com/articles/Home",
+                    site_profile="custom_profile",
+                    profiles_dir=profiles_dir,
+                    output_dir=self.tempdir / "bootstrap-output",
+                    workers=1,
+                    asset_workers_per_page=1,
+                    max_retries=0,
+                    max_pages=None,
+                )
+            )
+            response = httpx.Response(
+                200,
+                content=json.dumps({"query": {"allpages": [{"title": "Linked Page"}]}}).encode("utf-8"),
+                headers={"content-type": "application/json"},
+                request=httpx.Request("GET", crawler.profile.api_url()),
+            )
+            crawler._discover_namespace_ids = AsyncMock(return_value=[0])
+            crawler._fetch_with_retry = AsyncMock(return_value=response)
+
+            await crawler._bootstrap_from_mediawiki_api(object())
+
+        self.assertIn("https://example.com/articles/Linked_Page", crawler.enqueued)
+
     async def test_enqueue_new_urls_deduplicates_and_respects_soft_cap(self) -> None:
         self.crawler.enqueue_soft_cap = 2
         self.crawler.visited = {self.seed_url}

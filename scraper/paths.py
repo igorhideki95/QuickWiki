@@ -4,22 +4,22 @@ import os
 from pathlib import Path
 
 
+def _is_source_project_root(candidate: Path) -> bool:
+    return (candidate / "profiles").is_dir() and (candidate / "run_scraper.py").is_file()
+
+
 def find_source_project_root() -> Path | None:
     env_root = os.getenv("QUICKWIKI_ROOT", "").strip()
     if env_root:
         candidate = Path(env_root).expanduser().resolve()
-        if (candidate / "profiles").exists():
+        if _is_source_project_root(candidate):
             return candidate
 
     package_root = Path(__file__).resolve().parent.parent
     cwd = Path.cwd().resolve()
 
     for candidate in (cwd, package_root):
-        if (candidate / "profiles").exists() and (candidate / "run_scraper.py").exists():
-            return candidate
-
-    for candidate in (cwd, package_root):
-        if (candidate / "profiles").exists():
+        if _is_source_project_root(candidate):
             return candidate
 
     return None

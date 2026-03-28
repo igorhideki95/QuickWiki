@@ -1,13 +1,13 @@
 # Roadmap
 
-Estado atual: RC1 e RC2 fechados localmente em 2026-03-28, com a V1 source-first pronta para abertura publica sob licenca MIT.
+Estado atual: V1.0.0 publicada em 2026-03-28, com distribuicao source-first sob licenca MIT e backlog de manutencao pos-lancamento aberto.
 
 ## RC1 - Release Polish
 
 - `quickwiki` como comando canonico documentado.
 - `python -m quickwiki` como fallback sem depender do `PATH`.
 - `python run_scraper.py` mantido como caminho de compatibilidade.
-- README, hub de docs e manual alinhados com a mensagem public-ready v1.
+- README, hub de docs e manual alinhados com a mensagem publica da v1.
 - GUI com linguagem mais publica, focada nos perfis built-in oficiais.
 - Checklist de instalacao, quickstart e troubleshooting consolidado.
 
@@ -24,6 +24,7 @@ Estado atual: RC1 e RC2 fechados localmente em 2026-03-28, com a V1 source-first
 - perfis built-in como escopo oficial suportado.
 - GUI, output offline e diagnostico operacional alinhados.
 - distribuicao aberta sob licenca MIT.
+- release `v1.0.0` publicada no GitHub com metadata e governanca basica ativas.
 
 ## Post-v1
 

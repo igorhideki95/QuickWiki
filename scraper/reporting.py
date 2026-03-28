@@ -57,30 +57,30 @@ def build_health_payload(
 
     if pages_attempted and pages_saved == 0:
         status = "error"
-        warnings.append("Nenhuma pagina foi salva; revise seed URL, perfil e seletores.")
+        warnings.append("Nenhuma pagina foi salva. Confira o link inicial, o perfil escolhido e a conectividade.")
     elif failed_count and failure_rate >= 0.3:
         status = "warning"
-        warnings.append(f"Taxa de falha elevada ({failed_count}/{pages_attempted}).")
+        warnings.append(f"Muitas paginas falharam nesta rodada ({failed_count}/{pages_attempted}).")
     elif failed_count:
         status = "warning"
-        warnings.append(f"Foram registradas {failed_count} pagina(s) com falha.")
+        warnings.append(f"{failed_count} pagina(s) precisaram de atencao durante a coleta.")
 
     max_pages = config.get("max_pages")
     if max_pages is not None:
-        notes.append(f"Execucao parcial configurada com max_pages={max_pages}.")
+        notes.append(f"Execucao limitada a {max_pages} pagina(s) para teste.")
 
     if config.get("capture_wiki_source") and pages_saved and source_capture_rate == 0.0:
-        notes.append("Nenhuma pagina capturou source wiki nesta execucao.")
+        notes.append("Nenhuma pagina trouxe codigo-fonte da wiki nesta rodada.")
 
     if config.get("respect_robots_txt") is False:
-        notes.append("robots.txt foi ignorado nesta execucao.")
+        notes.append("O robots.txt foi ignorado nesta execucao.")
 
     if pending_count:
-        notes.append(f"{pending_count} URL(s) seguem pendente(s) no frontier.")
+        notes.append(f"Ainda existem {pending_count} pagina(s) aguardando processamento.")
 
     retry_rounds = int(stats.get("retry_rounds_completed", 0) or 0)
     if retry_rounds:
-        notes.append(f"{retry_rounds} rodada(s) de retry executada(s).")
+        notes.append(f"{retry_rounds} nova(s) tentativa(s) de recuperacao foram executadas.")
 
     return {
         "status": status,

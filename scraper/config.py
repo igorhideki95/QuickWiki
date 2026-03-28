@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 
 @dataclass(slots=True)
@@ -41,3 +42,28 @@ class ScraperConfig:
         if mode == "off":
             return False
         return self.max_pages is None
+
+    def to_runtime_dict(self) -> dict[str, Any]:
+        return {
+            "seed_url": self.seed_url,
+            "site_profile": self.site_profile,
+            "profiles_dir": str(self.profiles_dir) if self.profiles_dir else "",
+            "site_profile_files": [str(path) for path in self.site_profile_files],
+            "output_dir": str(self.normalized_output_dir()),
+            "user_agent": self.user_agent,
+            "workers": self.workers,
+            "asset_workers_per_page": self.asset_workers_per_page,
+            "rate_limit_per_sec": self.rate_limit_per_sec,
+            "timeout_seconds": self.timeout_seconds,
+            "max_retries": self.max_retries,
+            "backoff_base_seconds": self.backoff_base_seconds,
+            "checkpoint_every_pages": self.checkpoint_every_pages,
+            "max_pages": self.max_pages,
+            "retry_failed_passes": self.retry_failed_passes,
+            "capture_wiki_source": self.capture_wiki_source,
+            "resume": self.resume,
+            "respect_robots_txt": self.respect_robots_txt,
+            "api_bootstrap_mode": self.api_bootstrap_mode,
+            "allowed_domains": list(self.allowed_domains),
+            "allowed_path_prefix": self.allowed_path_prefix,
+        }

@@ -1,0 +1,75 @@
+name: Bug report
+description: Relate um erro, falha ou comportamento inesperado do QuickWiki.
+title: "[Bug]: "
+labels:
+  - bug
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Obrigado por relatar o problema. Quanto mais contexto você trouxer, mais rápido fica investigar.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Resumo
+      description: Descreva o que aconteceu e por que isso parece incorreto.
+      placeholder: O QuickWiki...
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Passos para reproduzir
+      description: Liste os passos mínimos para chegar ao problema.
+      placeholder: |
+        1. Execute...
+        2. Selecione...
+        3. Observe...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Comportamento esperado
+      placeholder: O que deveria ter acontecido.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Comportamento atual
+      placeholder: O que aconteceu de fato.
+    validations:
+      required: true
+  - type: input
+    id: command
+    attributes:
+      label: Comando executado
+      description: Cole o comando completo, se houver.
+      placeholder: quickwiki --site-profile tibiawiki_br --max-pages 25
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Sistema operacional
+      options:
+        - Windows
+        - Linux
+        - macOS
+        - Outro
+  - type: input
+    id: python
+    attributes:
+      label: Versão do Python
+      placeholder: "3.11.x"
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs ou erro
+      description: Cole o trecho mais relevante do log ou da mensagem de erro.
+      render: shell
+  - type: textarea
+    id: extra
+    attributes:
+      label: Contexto adicional
+      description: Informe qualquer detalhe que possa ajudar.

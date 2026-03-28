@@ -1,4 +1,6 @@
 {
+  "schema_version": 1,
+  "wiki_family": "mediawiki",
   "key": "tibiawiki_br",
   "label": "TibiaWiki Brasil",
   "description": "Perfil principal para a TibiaWiki brasileira hospedada em MediaWiki clássico.",

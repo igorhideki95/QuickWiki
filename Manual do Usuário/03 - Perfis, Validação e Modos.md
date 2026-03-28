@@ -1,85 +1,89 @@
-# 03 - Perfis, Validação e Modos
+# 03 - Perfis, Validacao e Modos
 
 ## Objetivo
 
-Entender como escolher a wiki certa e como controlar a forma de execução.
+Entender como escolher a wiki certa e como controlar a execucao.
 
-## Perfis incluídos
+## Perfis incluidos
 
-O projeto já traz dois perfis:
+O projeto traz dois perfis oficiais para a v1:
 
 - `tibiawiki_br`
 - `tibia_fandom`
 
-## Listar perfis disponíveis
+Perfis externos continuam carregaveis pela CLI, mas sao tratados como preview avancado.
+
+Os perfis declarativos agora usam `schema_version: 1` e `wiki_family`, preparando futuras validacoes e a matriz de compatibilidade do projeto.
+
+## Listar perfis disponiveis
 
 ```bash
-python run_scraper.py --list-site-profiles
+quickwiki --list-site-profiles
 ```
 
 ## Validar perfis carregados
 
 ```bash
-python run_scraper.py --validate-site-profiles
+quickwiki --validate-site-profiles
 ```
 
 Use esse comando quando:
 
 - alterar um arquivo em `profiles/`;
 - adicionar um perfil extra;
-- quiser confirmar rapidamente que a configuração está íntegra.
+- quiser confirmar rapidamente que a configuracao esta integra.
 
-## Forçar um perfil específico
+## Forcar um perfil especifico
 
 ```bash
-python run_scraper.py --site-profile tibia_fandom
+quickwiki --site-profile tibia_fandom
 ```
 
 ## Deixar o sistema detectar automaticamente
 
 ```bash
-python run_scraper.py --site-profile auto --seed-url https://www.tibiawiki.com.br/wiki/Home
+quickwiki --site-profile auto --seed-url https://www.tibiawiki.com.br/wiki/Home
 ```
 
 ## Carregar perfil extra por arquivo
 
 ```bash
-python run_scraper.py --site-profile-file .\profiles\minha_wiki.json --site-profile minha_wiki
+quickwiki --site-profile-file .\profiles\minha_wiki.json --site-profile minha_wiki
 ```
 
-## Modos úteis no dia a dia
+## Modos uteis no dia a dia
 
-### Retomar execução anterior
+### Retomar execucao anterior
 
-Por padrão, o QuickWiki tenta retomar do checkpoint quando ele existe.
+Por padrao, o QuickWiki tenta retomar do checkpoint quando ele existe.
 
-### Ignorar checkpoint e começar do zero
+### Ignorar checkpoint e comecar do zero
 
 ```bash
-python run_scraper.py --fresh
+quickwiki --fresh
 ```
 
 ### Desativar captura do source wiki
 
 ```bash
-python run_scraper.py --no-source
+quickwiki --no-source
 ```
 
-### Apenas servir uma saída já existente
+### Apenas servir uma saida ja existente
 
 ```bash
-python run_scraper.py --serve-only --output-dir output
+quickwiki --serve-only --output-dir output
 ```
 
-## Regra prática
+## Regra pratica
 
-Se você só quer testar:
+Se voce so quer testar:
 
 - valide os perfis;
 - rode com `--max-pages`;
-- confira a saída;
-- só depois faça um crawl maior.
+- confira a saida;
+- so depois faca um crawl maior.
 
-## Próximo passo
+## Proximo passo
 
-Abra `04 - Navegação Offline.md`.
+Abra `04 - Navegacao Offline.md`.

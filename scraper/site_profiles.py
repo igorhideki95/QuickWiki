@@ -6,9 +6,21 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from urllib.parse import quote, urlparse
 
+from .paths import resolve_profiles_dir
 
-DEFAULT_PROFILES_DIR = Path(__file__).resolve().parent.parent / "profiles"
 PROFILE_KEY_PATTERN = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
+WIKI_FAMILY_PATTERN = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
+DEFAULT_SITE_PROFILE_SCHEMA_VERSION = 1
+SUPPORTED_SITE_PROFILE_SCHEMA_VERSIONS = frozenset({DEFAULT_SITE_PROFILE_SCHEMA_VERSION})
+
+
+def _missing_profiles_message(directory: Path) -> str:
+    return (
+        f"Nenhum perfil de wiki encontrado em {directory}. "
+        "QuickWiki e source-first: execute a partir da raiz do repositorio, "
+        "defina QUICKWIKI_ROOT para apontar para um checkout valido ou informe "
+        "--profiles-dir/--site-profile-file explicitamente."
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -18,6 +30,8 @@ class WikiSiteProfile:
     description: str
     default_seed_url: str
     allowed_domains: tuple[str, ...]
+    schema_version: int = DEFAULT_SITE_PROFILE_SCHEMA_VERSION
+    wiki_family: str = "mediawiki"
     allowed_path_prefix: str = "/wiki/"
     api_path: str = "/api.php"
     title_selectors: tuple[str, ...] = ("h1#firstHeading", "h1.firstHeading", "h1")
@@ -30,6 +44,8 @@ class WikiSiteProfile:
     @classmethod
     def from_dict(cls, payload: dict[str, object], *, definition_path: str = "") -> "WikiSiteProfile":
         return cls(
+            schema_version=int(payload.get("schema_version", DEFAULT_SITE_PROFILE_SCHEMA_VERSION)),
+            wiki_family=str(payload.get("wiki_family", "mediawiki")),
             key=str(payload["key"]),
             label=str(payload.get("label", payload["key"])),
             description=str(payload.get("description", "")),
@@ -70,7 +86,7 @@ def load_site_profiles(
     *,
     extra_profile_files: tuple[Path, ...] = (),
 ) -> dict[str, WikiSiteProfile]:
-    directory = (profiles_dir or DEFAULT_PROFILES_DIR).expanduser().resolve()
+    directory = (profiles_dir or resolve_profiles_dir()).expanduser().resolve()
     profiles: dict[str, WikiSiteProfile] = {}
 
     candidate_files: list[Path] = []
@@ -79,15 +95,27 @@ def load_site_profiles(
     candidate_files.extend(path.expanduser().resolve() for path in extra_profile_files)
 
     for path in candidate_files:
-        payload = json.loads(path.read_text(encoding="utf-8"))
+        try:
+            raw_payload = path.read_text(encoding="utf-8")
+        except OSError as exc:
+            raise ValueError(f"Perfil invalido em {path}: nao foi possivel ler o arquivo ({exc}).") from exc
+
+        try:
+            payload = json.loads(raw_payload)
+        except json.JSONDecodeError as exc:
+            raise ValueError(
+                f"Perfil invalido em {path}: JSON malformado na linha {exc.lineno}, coluna {exc.colno}."
+            ) from exc
         if not isinstance(payload, dict):
             raise ValueError(f"Perfil inválido em {path}: esperado objeto JSON.")
         validate_site_profile_payload(payload, definition_path=str(path))
         profile = WikiSiteProfile.from_dict(payload, definition_path=str(path))
+        if profile.key in profiles:
+            raise ValueError(f"Perfil invalido em {path}: chave duplicada '{profile.key}'.")
         profiles[profile.key] = profile
 
     if not profiles:
-        raise FileNotFoundError(f"Nenhum perfil de wiki encontrado em {directory}")
+        raise FileNotFoundError(_missing_profiles_message(directory))
     return profiles
 
 
@@ -129,6 +157,20 @@ def available_site_profile_keys(
 def validate_site_profile_payload(payload: dict[str, object], *, definition_path: str = "") -> None:
     errors: list[str] = []
     source = definition_path or "<memory>"
+
+    schema_version = payload.get("schema_version", DEFAULT_SITE_PROFILE_SCHEMA_VERSION)
+    if not isinstance(schema_version, int):
+        errors.append("campo 'schema_version' deve ser um inteiro.")
+    elif schema_version not in SUPPORTED_SITE_PROFILE_SCHEMA_VERSIONS:
+        errors.append(
+            "campo 'schema_version' usa uma versao nao suportada pelo carregador atual."
+        )
+
+    wiki_family = payload.get("wiki_family", "mediawiki")
+    if not isinstance(wiki_family, str) or not wiki_family.strip():
+        errors.append("campo 'wiki_family' deve ser uma string nao vazia.")
+    elif not WIKI_FAMILY_PATTERN.fullmatch(wiki_family.strip()):
+        errors.append("campo 'wiki_family' deve usar letras minusculas, numeros, '_' ou '-'.")
 
     key = payload.get("key")
     if not isinstance(key, str) or not key.strip():

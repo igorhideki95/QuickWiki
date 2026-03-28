@@ -1,19 +1,26 @@
 # 05 - Problemas Comuns
 
-## O comando não roda
+## O comando nao roda
 
 Verifique:
 
-- se você está na pasta correta do projeto;
-- se o Python está disponível no terminal;
-- se as dependências foram instaladas com `pip install -r requirements.txt`.
+- se voce esta na pasta correta do projeto;
+- se o Python esta disponivel no terminal;
+- se as dependencias foram instaladas com `python -m pip install .`.
 
-## A validação de perfis falha
+Se o Windows nao reconhecer `quickwiki`, tente:
+
+- abrir um novo terminal;
+- confirmar o diretorio Scripts do Python do usuario no `PATH`;
+- usar `python -m quickwiki --help` como fallback sem depender do `PATH`;
+- usar `python run_scraper.py --help` como compatibilidade imediata.
+
+## A validacao de perfis falha
 
 Rode:
 
 ```bash
-python run_scraper.py --validate-site-profiles
+quickwiki --validate-site-profiles
 ```
 
 Se houver erro, revise:
@@ -23,21 +30,23 @@ Se houver erro, revise:
 - `allowed_domains`
 - seletores e campos do `theme`
 
-## O crawl não encontrou conteúdo suficiente
+Se a mensagem mencionar falta de perfis na pasta atual, revise qualquer `--profiles-dir` customizado ou defina `QUICKWIKI_ROOT` para a clone correta do projeto.
+
+## O crawl nao encontrou conteudo suficiente
 
 Tente:
 
-- confirmar se o perfil está correto;
+- confirmar se o perfil esta correto;
 - usar `--site-profile` explicitamente;
 - testar primeiro com `--max-pages 25`;
 - verificar `output/logs/scraper.log`.
 
-## O resultado foi criado, mas não abre bem no navegador
+## O resultado foi criado, mas nao abre bem no navegador
 
 Use o modo servidor em vez de abrir arquivos soltos:
 
 ```bash
-python run_scraper.py --serve-only --output-dir output
+quickwiki --serve-only --output-dir output
 ```
 
 ## Quero reiniciar tudo do zero
@@ -45,7 +54,7 @@ python run_scraper.py --serve-only --output-dir output
 Use:
 
 ```bash
-python run_scraper.py --fresh
+quickwiki --fresh
 ```
 
 ## Quero apenas inspecionar os perfis e parar
@@ -53,21 +62,21 @@ python run_scraper.py --fresh
 Use:
 
 ```bash
-python run_scraper.py --list-site-profiles
-python run_scraper.py --validate-site-profiles
+quickwiki --list-site-profiles
+quickwiki --validate-site-profiles
 ```
 
 ## Quando procurar os logs
 
 Confira `output/logs/scraper.log` quando:
 
-- a execução para no meio;
-- o número de páginas salvas parece muito baixo;
-- o servidor local funciona, mas o conteúdo ficou incompleto.
+- a execucao para no meio;
+- o numero de paginas salvas parece muito baixo;
+- o servidor local funciona, mas o conteudo ficou incompleto.
 
 ## Fechamento
 
-Se o uso básico já estiver funcionando, o próximo passo natural é repetir o fluxo com:
+Se o uso basico ja estiver funcionando, o proximo passo natural e repetir o fluxo com:
 
 - outro perfil;
 - outra seed;

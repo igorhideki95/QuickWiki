@@ -2,62 +2,26 @@
 
 ## Objetivo
 
-Fazer a primeira execução de forma segura, rápida e fácil de verificar.
+Rodar o primeiro crawl controlado usando um perfil built-in oficial.
 
-## Recomendação
-
-Na primeira vez, use um crawl pequeno. Isso ajuda a confirmar:
-
-- se a rede está funcionando;
-- se o perfil escolhido está correto;
-- se a saída está sendo criada no lugar esperado.
-
-## Passo 1 — Rodar uma execução de amostra
+## Fluxo recomendado
 
 ```bash
-python run_scraper.py --max-pages 25 --workers 6 --rate-limit 2
+quickwiki --validate-site-profiles
+quickwiki --site-profile tibiawiki_br --max-pages 25
 ```
 
-## O que esse comando faz
+## O que observar
 
-- limita a captura a 25 páginas;
-- usa 6 workers;
-- mantém um ritmo moderado de requisições;
-- grava a saída em `output/`.
+- se o perfil escolhido e reconhecido corretamente;
+- se o espelho gerou `index.html` e `admin/index.html`;
+- se `summary.json`, `run_report.json` e `runtime_status.json` foram criados;
+- se o log mostra um crawl saudavel.
 
-## Passo 2 — Verificar a pasta de saída
+## Dica pratica
 
-Depois da execução, confira se foram criados:
+Comece pequeno. A v1 foi pensada para ser previsivel com perfis built-in e ciente de que perfis externos ficam como preview via CLI.
 
-- `output/index.html`
-- `output/admin/index.html`
-- `output/data/indexes/summary.json`
-- `output/logs/scraper.log`
+## Proximo passo
 
-## Passo 3 — Servir a saída localmente
-
-```bash
-python run_scraper.py --serve-only --output-dir output
-```
-
-Depois abra:
-
-- `http://127.0.0.1:8765/index.html`
-
-## Quando partir para um crawl maior
-
-Depois que a execução de amostra funcionar bem, você pode usar:
-
-```bash
-python run_scraper.py --workers 8 --rate-limit 2
-```
-
-## Checklist rápido
-
-- amostra executada sem erro;
-- pasta `output/` criada;
-- home offline acessível no navegador.
-
-## Próximo passo
-
-Abra `03 - Perfis, Validação e Modos.md`.
+Abra `03 - Perfis, Validacao e Modos.md`.

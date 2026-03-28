@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "wiki_family": "mediawiki",
+  "key": "tibiawiki_br",
+  "label": "TibiaWiki Brasil",
+  "description": "Perfil principal para a TibiaWiki brasileira hospedada em MediaWiki classico.",
+  "default_seed_url": "https://www.tibiawiki.com.br/wiki/Home",
+  "allowed_domains": [
+    "www.tibiawiki.com.br",
+    "tibiawiki.com.br"
+  ],
+  "allowed_path_prefix": "/wiki/",
+  "api_path": "/api.php",
+  "title_selectors": [
+    "h1#firstHeading",
+    "h1.firstHeading",
+    "h1"
+  ],
+  "content_root_selectors": [
+    "#mw-content-text .mw-parser-output",
+    "#mw-content-text",
+    "main"
+  ],
+  "category_selectors": [
+    "#mw-normal-catlinks a",
+    ".catlinks a"
+  ],
+  "extra_noise_selectors": [
+    ".noprint",
+    ".mw-jump-link"
+  ],
+  "theme": {
+    "accent": "#8e2f1a",
+    "accent_soft": "#f4d9b4",
+    "link": "#174d72",
+    "panel": "rgba(255, 252, 246, 0.92)"
+  }
+}

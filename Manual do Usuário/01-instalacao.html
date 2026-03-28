@@ -3,70 +3,27 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>QuickWiki — Instalação e Preparação</title>
+  <title>QuickWiki - Instalacao e Preparacao</title>
   <link rel="stylesheet" href="manual.css">
 </head>
 <body>
-  <div class="manual-bg"></div>
-  <main class="chapter-shell">
-    <div class="chapter-topbar">
-      <a class="nav-pill" href="index.html">Voltar ao Manual</a>
-      <a class="nav-pill" href="01 - Instalação e Preparação.md">Abrir versão Markdown</a>
-    </div>
-
-    <header class="chapter-head">
-      <span class="eyebrow">Capítulo 01</span>
-      <h1>Instalação e Preparação</h1>
-      <p class="chapter-lead">Deixe o QuickWiki pronto para o primeiro uso com o mínimo de atrito e com uma checagem segura antes do primeiro crawl.</p>
-    </header>
-
-    <article class="chapter-body">
-      <h2>Objetivo</h2>
-      <p>Deixar o QuickWiki pronto para o primeiro uso sem complicação.</p>
-
-      <h2>Pré-requisitos</h2>
-      <p>Você precisa ter:</p>
-      <ul>
-        <li>Python instalado.</li>
-        <li>Acesso ao terminal na pasta do projeto.</li>
-        <li>Conexão com a internet para instalar dependências e acessar a wiki alvo.</li>
-      </ul>
-
-      <h2>Passo 1 — Entrar na pasta do projeto</h2>
-      <pre><code>cd &lt;diretorio-do-projeto&gt;</code></pre>
-
-      <h2>Passo 2 — Instalar dependências</h2>
-      <pre><code>python -m pip install -r requirements.txt</code></pre>
-
-      <h2>Passo 3 — Confirmar que a CLI está disponível</h2>
-      <pre><code>python run_scraper.py --help</code></pre>
-      <p>Se tudo estiver certo, o terminal vai mostrar a lista de opções do QuickWiki.</p>
-
-      <h2>Passo 4 — Validar os perfis antes do uso</h2>
-      <pre><code>python run_scraper.py --validate-site-profiles</code></pre>
-      <p>Esse comando é recomendado porque confirma que os perfis JSON carregados pelo sistema estão válidos antes de iniciar um crawl.</p>
-
-      <h2>Checklist rápido</h2>
-      <ul>
-        <li>Dependências instaladas.</li>
-        <li>`--help` funcionando.</li>
-        <li>Perfis validados com sucesso.</li>
-      </ul>
-    </article>
-
-    <div class="chapter-note">
-      <strong>Próximo passo</strong>
-      <p>Depois da preparação, abra o capítulo da GUI local para seguir pela experiência visual oficial do produto.</p>
-    </div>
-
-    <nav class="chapter-nav">
-      <div class="nav-group">
-        <a class="nav-pill" href="index.html">Índice do Manual</a>
-      </div>
-      <div class="nav-group">
-        <a class="nav-pill" href="06-gui-studio.html">Próximo: QuickWiki Studio</a>
-      </div>
-    </nav>
+  <main class="page">
+    <a class="back-link" href="index.html">Voltar ao indice</a>
+    <h1>01 - Instalacao e Preparacao</h1>
+    <p>Instale o QuickWiki a partir do source e confirme a CLI canonica antes de seguir para o primeiro crawl.</p>
+    <h2>Comandos</h2>
+    <pre><code>python -m pip install .
+quickwiki --help
+quickwiki --validate-site-profiles</code></pre>
+    <p>Se o Windows ainda nao reconhecer <code>quickwiki</code>, abra um novo terminal. Enquanto ajusta o PATH do Scripts do Python do usuario, use <code>python -m quickwiki --help</code> ou <code>python run_scraper.py --help</code>.</p>
+    <h2>O que confirmar</h2>
+    <ul>
+      <li>O comando `quickwiki` esta disponivel.</li>
+      <li>O fallback `python -m quickwiki` tambem funciona.</li>
+      <li>Os perfis built-in oficiais validam sem erro.</li>
+      <li>`python run_scraper.py --help` segue funcionando como compatibilidade.</li>
+    </ul>
+    <p>Proximo passo: <a href="02-primeiro-espelho.html">Primeiro Espelho</a>.</p>
   </main>
 </body>
 </html>

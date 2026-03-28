@@ -10,9 +10,11 @@ from pathlib import Path
 from typing import Any
 
 from .models import PageDocument
+from .reporting import build_run_report, summarize_failed_pages
 from .site_profiles import WikiSiteProfile
 from .ui_assets import MIRROR_INDEX_JS, build_mirror_css
 from .url_utils import extension_from_url, shard_from_slug, slug_from_url
+from .version import QUICKWIKI_VERSION, build_artifact_metadata
 
 
 class StorageManager:
@@ -33,6 +35,7 @@ class StorageManager:
         self.logs_dir = self.output_root / "logs"
 
         self.state_file = self.checkpoints_dir / "state.json"
+        self.runtime_status_file = self.checkpoints_dir / "runtime_status.json"
         self.url_to_slug_file = self.indexes_dir / "url_to_slug.json"
         self.assets_by_hash_file = self.indexes_dir / "assets_by_hash.json"
         self.assets_by_url_file = self.indexes_dir / "assets_by_url.json"
@@ -45,6 +48,7 @@ class StorageManager:
         self.search_index_js_file = self.indexes_dir / "search_index.js"
         self.profile_diagnostics_file = self.indexes_dir / "profile_diagnostics.json"
         self.summary_file = self.indexes_dir / "summary.json"
+        self.run_report_file = self.indexes_dir / "run_report.json"
         self.theme_css_file = self.static_dir / "mirror.css"
         self.index_js_file = self.static_dir / "mirror-index.js"
 
@@ -151,8 +155,10 @@ class StorageManager:
 
         home_relative = os.path.relpath(self.output_root / "index.html", start=paths["html"].parent).replace("\\", "/")
         markdown_payload = _build_markdown_document(page)
+        page_payload = page.to_dict()
+        page_payload.update(build_artifact_metadata("page_document", generated_at=page.fetched_at))
         _atomic_write_text(paths["markdown"], markdown_payload)
-        _atomic_write_text(paths["json"], _to_json(page.to_dict()))
+        _atomic_write_text(paths["json"], _to_json(page_payload))
         source_relative = (
             os.path.relpath(paths["source"], start=paths["html"].parent).replace("\\", "/") if page.wikitext else ""
         )
@@ -234,15 +240,29 @@ class StorageManager:
         except json.JSONDecodeError:
             return None
 
+    def write_runtime_status(self, payload: dict[str, Any]) -> None:
+        self.checkpoints_dir.mkdir(parents=True, exist_ok=True)
+        _atomic_write_text(self.runtime_status_file, _to_json(payload))
+
+    def load_runtime_status(self) -> dict[str, Any] | None:
+        if not self.runtime_status_file.exists():
+            return None
+        try:
+            payload = json.loads(self.runtime_status_file.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            return None
+        return payload if isinstance(payload, dict) else None
+
     def flush_indexes(self) -> None:
         with self._lock:
             self.indexes_dir.mkdir(parents=True, exist_ok=True)
             _atomic_write_text(self.url_to_slug_file, _to_json(self.url_to_slug))
             _atomic_write_text(self.assets_by_hash_file, _to_json(self.assets_by_hash))
             _atomic_write_text(self.assets_by_url_file, _to_json(self.assets_by_url))
+            manifest_entries = sorted(self.pages_manifest.values(), key=lambda entry: entry["title"].lower())
             _atomic_write_text(
                 self.pages_manifest_file,
-                _to_json(sorted(self.pages_manifest.values(), key=lambda entry: entry["title"].lower())),
+                _to_json(_build_pages_manifest_payload(manifest_entries)),
             )
             _atomic_write_text(self.link_graph_file, _to_json(self.link_graph))
 
@@ -252,17 +272,20 @@ class StorageManager:
         *,
         failed_pages: dict[str, str] | None = None,
         site_profile: WikiSiteProfile | None = None,
+        run_config: dict[str, Any] | None = None,
     ) -> None:
         self.flush_indexes()
         backlinks, category_index, duplicate_content, search_entries = self._build_derived_indexes()
+        generated_at = datetime.now(UTC).isoformat()
 
+        failed_summary = summarize_failed_pages(failed_pages or {})
         failed_payload = {
-            "generated_at": datetime.now(UTC).isoformat(),
-            "count": len(failed_pages or {}),
+            **build_artifact_metadata("failed_pages", generated_at=generated_at),
+            **failed_summary,
             "pages": dict(sorted((failed_pages or {}).items(), key=lambda item: item[0])),
         }
         summary = {
-            "generated_at": datetime.now(UTC).isoformat(),
+            **build_artifact_metadata("summary", generated_at=generated_at),
             "pages_saved": len(self.pages_manifest),
             "assets_saved": len(self.assets_by_hash),
             "categories_indexed": len(category_index),
@@ -278,6 +301,14 @@ class StorageManager:
             "stats": stats,
         }
         profile_diagnostics = _build_profile_diagnostics(site_profile, summary)
+        run_report = build_run_report(
+            output_root=self.output_root,
+            summary=summary,
+            stats=stats,
+            failed_pages=failed_pages or {},
+            site_profile=site_profile,
+            run_config=run_config,
+        )
 
         _atomic_write_text(self.backlinks_file, _to_json(backlinks))
         _atomic_write_text(self.category_index_file, _to_json(category_index))
@@ -290,10 +321,11 @@ class StorageManager:
             "window.__TIBIA_WIKI_SEARCH_INDEX__ = window.__QUICKWIKI_SEARCH_INDEX__;\n",
         )
         _atomic_write_text(self.summary_file, _to_json(summary))
+        _atomic_write_text(self.run_report_file, _to_json(run_report))
         self._rewrite_page_documents_with_navigation(backlinks)
         self._write_ui_assets(site_profile)
-        self._write_landing_page(summary)
-        self._write_admin_page(summary, profile_diagnostics)
+        self._write_landing_page(summary, run_report)
+        self._write_admin_page(summary, profile_diagnostics, run_report)
 
     def _create_dirs(self) -> None:
         for folder in (
@@ -321,7 +353,7 @@ class StorageManager:
         self.url_to_slug = _read_json_dict(self.url_to_slug_file)
         self.assets_by_hash = _read_json_dict(self.assets_by_hash_file)
         self.assets_by_url = _read_json_dict(self.assets_by_url_file)
-        manifest_list = _read_json_list(self.pages_manifest_file)
+        manifest_list = _read_json_list(self.pages_manifest_file, data_keys=("pages",))
         self.pages_manifest = {
             entry["slug"]: entry for entry in manifest_list if isinstance(entry, dict) and "slug" in entry
         }
@@ -449,7 +481,11 @@ class StorageManager:
                 ),
             )
 
-    def _write_landing_page(self, summary: dict[str, Any]) -> None:
+    def _write_landing_page(self, summary: dict[str, Any], run_report: dict[str, Any]) -> None:
+        health = run_report.get("health", {}) if isinstance(run_report.get("health"), dict) else {}
+        health_status = _humanize_health_status(str(health.get("status", "ok")))
+        health_note = _first_report_note(health)
+        version = html.escape(str(summary.get("quickwiki_version", QUICKWIKI_VERSION)))
         page = f"""<!doctype html>
 <html lang="pt-BR">
 <head>
@@ -467,15 +503,17 @@ class StorageManager:
       <div>
         <h1 class="mirror-title">QuickWiki</h1>
         <p class="mirror-meta-line">
-          Busca offline completa, perfis de site, source wiki salvo e uma base pronta para crescer para outras wikis MediaWiki/Fandom.
+          Release publica source-first focada nos perfis oficiais incluidos e pronta para navegacao offline completa.
         </p>
+        <p class="mirror-meta-line"><strong>Versao:</strong> {version}</p>
         <p class="mirror-meta-line"><strong>Perfil ativo:</strong> {html.escape(str(summary.get("site_label") or summary.get("site_profile") or "desconhecido"))}</p>
+        <p class="mirror-meta-line"><strong>Saúde operacional:</strong> {html.escape(health_status)}{(" | " + html.escape(health_note)) if health_note else ""}</p>
       </div>
       <div class="mirror-summary">
         <div class="mirror-stat"><strong>{summary["pages_saved"]}</strong>Páginas salvas</div>
         <div class="mirror-stat"><strong>{summary["assets_saved"]}</strong>Assets únicos</div>
         <div class="mirror-stat"><strong>{summary["categories_indexed"]}</strong>Categorias indexadas</div>
-        <div class="mirror-stat"><strong>{summary["duplicate_content_groups"]}</strong>Grupos duplicados</div>
+        <div class="mirror-stat"><strong>{summary["failed_pages"]}</strong>Falhas</div>
       </div>
       <div class="mirror-controls">
         <label>
@@ -493,6 +531,8 @@ class StorageManager:
         <a href="data/indexes/categories.json">Categorias</a>
         <a href="data/indexes/duplicate_content.json">Duplicados</a>
         <a href="data/indexes/failed_pages.json">Falhas</a>
+        <a href="data/indexes/run_report.json">Relatório da execução</a>
+        <a href="checkpoints/runtime_status.json">Status operacional</a>
         <a href="admin/index.html">QuickWiki Admin</a>
       </div>
       <div class="mirror-meta-line">Gerado em {html.escape(summary["generated_at"])}</div>
@@ -510,12 +550,18 @@ class StorageManager:
 """
         _atomic_write_text(self.output_root / "index.html", page)
 
-    def _write_admin_page(self, summary: dict[str, Any], profile_diagnostics: dict[str, Any]) -> None:
+    def _write_admin_page(
+        self,
+        summary: dict[str, Any],
+        profile_diagnostics: dict[str, Any],
+        run_report: dict[str, Any],
+    ) -> None:
         profile = profile_diagnostics.get("profile", {})
         selectors = profile_diagnostics.get("selectors", {})
         theme = profile_diagnostics.get("theme", {})
         files = profile_diagnostics.get("files", {})
         stats = profile_diagnostics.get("stats", {})
+        health = run_report.get("health", {}) if isinstance(run_report.get("health"), dict) else {}
 
         selector_sections = "".join(
             f"""
@@ -550,6 +596,7 @@ class StorageManager:
             f'<div class="mirror-stat"><strong>{html.escape(str(value))}</strong>{html.escape(_humanize_key(key))}</div>'
             for key, value in stats.items()
         )
+        health_rows = _build_health_rows(health)
 
         page = f"""<!doctype html>
 <html lang="pt-BR">
@@ -569,6 +616,8 @@ class StorageManager:
           Ambiente preparado para adicionar novas wikis por JSON, validar seletores e manter o visual do espelho mais leve e maleável.
         </p>
       </div>
+      <p class="mirror-meta-line"><strong>Versao:</strong> {html.escape(str(summary.get("quickwiki_version", QUICKWIKI_VERSION)))}</p>
+      <p class="mirror-meta-line"><strong>Suporte oficial v1:</strong> perfis incluidos no repositorio. Perfis externos seguem em preview via CLI.</p>
       <div class="mirror-summary">
         <div class="mirror-stat"><strong>{html.escape(str(summary.get("pages_saved", 0)))}</strong>Páginas</div>
         <div class="mirror-stat"><strong>{html.escape(str(summary.get("assets_saved", 0)))}</strong>Assets</div>
@@ -579,6 +628,7 @@ class StorageManager:
         <a href="../index.html">Abrir home offline</a>
         <a href="../data/indexes/profile_diagnostics.json">JSON do perfil</a>
         <a href="../data/indexes/summary.json">Resumo do crawl</a>
+        <a href="../data/indexes/run_report.json">Relatório da execução</a>
         <a href="../data/indexes/pages_manifest.json">Manifesto</a>
       </div>
     </section>
@@ -599,6 +649,11 @@ class StorageManager:
         <small>Pontos úteis para inspeção e manutenção</small>
         <ul class="mirror-link-list">{file_rows or '<li>Nenhum arquivo adicional registrado.</li>'}</ul>
       </section>
+      <section class="mirror-admin-card">
+        <h2>Saúde operacional</h2>
+        <small>Sinais rápidos do último crawl</small>
+        <code class="mirror-admin-code">{html.escape(_format_run_health_block(health))}</code>
+      </section>
     </section>
 
     <section class="mirror-toolbar">
@@ -607,6 +662,10 @@ class StorageManager:
 
     <section class="mirror-summary" style="margin-bottom:18px">
       {stat_rows}
+    </section>
+
+    <section class="mirror-admin-grid" style="margin-bottom:18px">
+      {health_rows}
     </section>
 
     <section class="mirror-admin-grid">
@@ -621,6 +680,8 @@ class StorageManager:
 
 def _build_markdown_document(page: PageDocument) -> str:
     header = {
+        "quickwiki_version": QUICKWIKI_VERSION,
+        "schema_version": 1,
         "title": page.title,
         "source_url": page.url,
         "fetched_at": page.fetched_at,
@@ -799,6 +860,8 @@ def _build_profile_diagnostics(
     stats = summary.get("stats", {}) if isinstance(summary.get("stats"), dict) else {}
     if site_profile is None:
         profile_payload: dict[str, Any] = {
+            "schema_version": 0,
+            "wiki_family": "unknown",
             "key": summary.get("site_profile", ""),
             "label": summary.get("site_label", ""),
             "description": "",
@@ -812,6 +875,8 @@ def _build_profile_diagnostics(
         theme_payload: dict[str, str] = {}
     else:
         profile_payload = {
+            "schema_version": site_profile.schema_version,
+            "wiki_family": site_profile.wiki_family,
             "key": site_profile.key,
             "label": site_profile.label,
             "description": site_profile.description,
@@ -829,16 +894,19 @@ def _build_profile_diagnostics(
         }
         theme_payload = dict(site_profile.theme)
 
+    generated_at = str(summary.get("generated_at", ""))
     return {
-        "generated_at": summary.get("generated_at", ""),
+        **build_artifact_metadata("profile_diagnostics", generated_at=generated_at),
         "profile": profile_payload,
         "selectors": selectors_payload,
         "theme": theme_payload,
         "files": {
             "summary": "data/indexes/summary.json",
+            "run_report": "data/indexes/run_report.json",
             "profile_diagnostics": "data/indexes/profile_diagnostics.json",
             "manifest": "data/indexes/pages_manifest.json",
             "search_index": "data/indexes/search_index.js",
+            "runtime_status": "checkpoints/runtime_status.json",
             "admin_page": "admin/index.html",
             "landing_page": "index.html",
         },
@@ -852,6 +920,14 @@ def _build_profile_diagnostics(
             "links_discovered": stats.get("links_discovered", 0),
             "source_pages_captured": stats.get("source_pages_captured", 0),
         },
+    }
+
+
+def _build_pages_manifest_payload(entries: list[dict[str, Any]]) -> dict[str, Any]:
+    generated_at = datetime.now(UTC).isoformat()
+    return {
+        **build_artifact_metadata("pages_manifest", generated_at=generated_at),
+        "pages": entries,
     }
 
 
@@ -876,9 +952,58 @@ def _humanize_key(value: str) -> str:
     return value.replace("_", " ").strip().title()
 
 
+def _humanize_health_status(value: str) -> str:
+    mapping = {
+        "ok": "Estavel",
+        "warning": "Atencao",
+        "error": "Critico",
+    }
+    return mapping.get(value.strip().lower(), value.strip().title())
+
+
+def _first_report_note(health: dict[str, Any]) -> str:
+    for bucket in ("warnings", "notes"):
+        values = health.get(bucket, [])
+        if isinstance(values, list) and values:
+            return str(values[0])
+    return ""
+
+
+def _format_run_health_block(health: dict[str, Any]) -> str:
+    warnings = health.get("warnings", []) if isinstance(health.get("warnings"), list) else []
+    notes = health.get("notes", []) if isinstance(health.get("notes"), list) else []
+    metrics = health.get("metrics", {}) if isinstance(health.get("metrics"), dict) else {}
+    rows = [f"status: {_humanize_health_status(str(health.get('status', 'ok')))}"]
+    rows.append(f"failure_rate: {metrics.get('failure_rate', 0)}")
+    rows.append(f"source_capture_rate: {metrics.get('source_capture_rate', 0)}")
+    rows.append(f"retry_recovery_rate: {metrics.get('retry_recovery_rate', 0)}")
+    rows.append("warnings: " + (" | ".join(str(value) for value in warnings) if warnings else "nenhum"))
+    rows.append("notes: " + (" | ".join(str(value) for value in notes) if notes else "nenhuma"))
+    return "\n".join(rows)
+
+
+def _build_health_rows(health: dict[str, Any]) -> str:
+    rows: list[str] = []
+    for label, values in (("Alertas", health.get("warnings", [])), ("Notas", health.get("notes", []))):
+        entries = values if isinstance(values, list) else []
+        if not entries:
+            entries = ["Nenhum item registrado."]
+        rows.append(
+            f"""
+            <section class="mirror-admin-card">
+              <h2>{html.escape(label)}</h2>
+              <ul class="mirror-link-list">{"".join(f"<li>{html.escape(str(item))}</li>" for item in entries)}</ul>
+            </section>
+            """
+        )
+    return "".join(rows)
+
+
 def _format_profile_block(profile: dict[str, Any]) -> str:
     rows = []
     for key in (
+        "schema_version",
+        "wiki_family",
         "key",
         "label",
         "description",
@@ -951,11 +1076,18 @@ def _read_json_dict(path: Path) -> dict[str, Any]:
     return payload if isinstance(payload, dict) else {}
 
 
-def _read_json_list(path: Path) -> list[Any]:
+def _read_json_list(path: Path, *, data_keys: tuple[str, ...] = ()) -> list[Any]:
     if not path.exists():
         return []
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
         return []
-    return payload if isinstance(payload, list) else []
+    if isinstance(payload, list):
+        return payload
+    if isinstance(payload, dict):
+        for key in data_keys:
+            candidate = payload.get(key)
+            if isinstance(candidate, list):
+                return candidate
+    return []

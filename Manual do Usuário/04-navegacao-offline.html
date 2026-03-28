@@ -3,94 +3,26 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>QuickWiki — Navegação Offline</title>
+  <title>QuickWiki - Navegacao Offline</title>
   <link rel="stylesheet" href="manual.css">
 </head>
 <body>
-  <div class="manual-bg"></div>
-  <main class="chapter-shell">
-    <div class="chapter-topbar">
-      <a class="nav-pill" href="index.html">Voltar ao Manual</a>
-      <a class="nav-pill" href="04 - Navegação Offline.md">Abrir versão Markdown</a>
-    </div>
-
-    <header class="chapter-head">
-      <span class="eyebrow">Capítulo 04</span>
-      <h1>Navegação Offline</h1>
-      <p class="chapter-lead">Entenda onde ficam os arquivos importantes e como abrir o espelho offline da forma mais estável para o usuário final.</p>
-    </header>
-
-    <article class="chapter-body">
-      <h2>Objetivo</h2>
-      <p>Aprender onde o QuickWiki grava o espelho e como navegar pelo resultado.</p>
-
-      <h2>Arquivos principais</h2>
-      <p>Depois de uma execução bem-sucedida, os pontos mais importantes são:</p>
-      <ul>
-        <li>`output/index.html`</li>
-        <li>`output/admin/index.html`</li>
-        <li>`output/data/indexes/summary.json`</li>
-        <li>`output/data/indexes/pages_manifest.json`</li>
-        <li>`output/logs/scraper.log`</li>
-      </ul>
-
-      <h2>Jeito mais simples de abrir</h2>
-      <p>Use:</p>
-      <pre><code>python run_scraper.py --serve-only --output-dir output</code></pre>
-      <p>Depois abra:</p>
-      <ul>
-        <li>`http://127.0.0.1:8765/index.html`</li>
-      </ul>
-
-      <h2>O que existe na home offline</h2>
-      <p>Na home você encontra:</p>
-      <ul>
-        <li>Busca local.</li>
-        <li>Filtros por categoria.</li>
-        <li>Links para manifesto, backlinks, categorias, duplicados e falhas.</li>
-        <li>Acesso ao painel administrativo.</li>
-      </ul>
-
-      <h2>O que existe no painel admin</h2>
-      <p>Em `output/admin/index.html` você encontra:</p>
-      <ul>
-        <li>Dados do perfil ativo.</li>
-        <li>Seletores configurados.</li>
-        <li>Atalhos para arquivos de diagnóstico.</li>
-        <li>Resumo do estado do espelho.</li>
-      </ul>
-
-      <h2>Onde estão as páginas e assets</h2>
-      <ul>
-        <li>Páginas HTML: `output/data/pages/html/`</li>
-        <li>Páginas Markdown: `output/data/pages/markdown/`</li>
-        <li>Páginas JSON: `output/data/pages/json/`</li>
-        <li>Source wiki: `output/data/pages/source/`</li>
-        <li>Assets: `output/data/assets/`</li>
-      </ul>
-
-      <h2>Dica prática</h2>
-      <p>Se você quer revisar rapidamente se o crawl ficou bom, normalmente basta abrir:</p>
-      <ol>
-        <li>`output/index.html`</li>
-        <li>`output/admin/index.html`</li>
-        <li>`output/data/indexes/summary.json`</li>
-      </ol>
-    </article>
-
-    <div class="chapter-note">
-      <strong>Próximo passo</strong>
-      <p>Se surgir qualquer comportamento estranho, avance para a seção de problemas comuns e use o checklist de diagnóstico.</p>
-    </div>
-
-    <nav class="chapter-nav">
-      <div class="nav-group">
-        <a class="nav-pill" href="03-perfis-validacao-modos.html">Anterior: Perfis, Validação e Modos</a>
-      </div>
-      <div class="nav-group">
-        <a class="nav-pill" href="05-problemas-comuns.html">Próximo: Problemas Comuns</a>
-      </div>
-    </nav>
+  <main class="page">
+    <a class="back-link" href="index.html">Voltar ao indice</a>
+    <h1>04 - Navegacao Offline</h1>
+    <p>Abra o espelho local e use os artefatos de diagnostico para entender o resultado do crawl.</p>
+    <h2>Arquivos principais</h2>
+    <ul>
+      <li>`output/index.html`</li>
+      <li>`output/admin/index.html`</li>
+      <li>`output/data/indexes/summary.json`</li>
+      <li>`output/data/indexes/run_report.json`</li>
+      <li>`output/checkpoints/runtime_status.json`</li>
+      <li>`output/data/indexes/pages_manifest.json`</li>
+    </ul>
+    <h2>Comando recomendado</h2>
+    <pre><code>quickwiki --serve-only --output-dir output</code></pre>
+    <p>Proximo passo: <a href="05-problemas-comuns.html">Problemas Comuns</a>.</p>
   </main>
 </body>
 </html>

@@ -1,19 +1,19 @@
-# Plan.md — Execução do QuickWiki
+# Plan.md - Execucao do QuickWiki
 
-Este plano operacionaliza a especificação de `isso que queremos.md` e agora também reflete a camada visual de operação do produto.
+Este plano registra a implementacao operacional do QuickWiki e a camada visual de operacao do produto.
 
 ## 1. Crawling completo (BFS)
 
-- [x] Descoberta automática de páginas `/wiki/`
+- [x] Descoberta automatica de paginas `/wiki/`
 - [x] Fila FIFO + conjunto de visitadas
-- [x] Canonicalização de URLs
-- [x] Ignorar âncoras e parâmetros irrelevantes
+- [x] Canonicalizacao de URLs
+- [x] Ignorar ancoras e parametros irrelevantes
 
-## 2. Extração de conteúdo
+## 2. Extracao de conteudo
 
-- [x] Título `h1`
+- [x] Titulo `h1`
 - [x] Hierarquia `h2-h6`
-- [x] Parágrafos, listas, citações e blocos de código
+- [x] Paragrafos, listas, citacoes e blocos de codigo
 - [x] Tabelas para JSON
 - [x] Infoboxes como objetos estruturados
 - [x] Templates detectados por classes
@@ -22,41 +22,41 @@ Este plano operacionaliza a especificação de `isso que queremos.md` e agora ta
 ## 3. Download de assets
 
 - [x] Download de imagens com fallback (original/thumbnail)
-- [x] Resolução de URL relativa para absoluta
-- [x] Deduplicação por hash SHA-256
-- [x] Bucketização (`images`, `items`, `monsters`, `maps`)
+- [x] Resolucao de URL relativa para absoluta
+- [x] Deduplicacao por hash SHA-256
+- [x] Bucketizacao (`images`, `items`, `monsters`, `maps`)
 
-## 4. Normalização e transformação
+## 4. Normalizacao e transformacao
 
-- [x] Limpeza de ruído (script/style/UI)
+- [x] Limpeza de ruido (script/style/UI)
 - [x] Export para HTML limpo e Markdown
-- [x] JSON estruturado por página
-- [x] Reescrita de links para navegação offline
+- [x] JSON estruturado por pagina
+- [x] Reescrita de links para navegacao offline
 
 ## 5. Armazenamento organizado e fast opening
 
-- [x] Estrutura por shards para reduzir custo de diretórios gigantes
-- [x] Índices (`manifest`, `graph`, `assets`, `summary`)
-- [x] `index.html` local para abertura rápida
+- [x] Estrutura por shards para reduzir custo de diretorios gigantes
+- [x] Indices (`manifest`, `graph`, `assets`, `summary`)
+- [x] `index.html` local para abertura rapida
 
-## 6. Controle e execução resiliente
+## 6. Controle e execucao resiliente
 
-- [x] Rate limit configurável
+- [x] Rate limit configuravel
 - [x] Retry com backoff exponencial
 - [x] Logs de progresso/erro
-- [x] Checkpoint para retomar após interrupção
+- [x] Checkpoint para retomar apos interrupcao
 
-## 7. Experiência visual e operação guiada
+## 7. Experiencia visual e operacao guiada
 
 - [x] GUI local `QuickWiki Studio`
-- [x] Início de execução por formulário visual
-- [x] Validação de perfis pela interface
+- [x] Inicio de execucao por formulario visual
+- [x] Validacao de perfis pela interface
 - [x] Leitura de estado e logs em tempo real
 - [x] Atalhos para espelho, admin, resumo e manual
-- [x] Manual do usuário alinhado com a GUI
+- [x] Manual do usuario alinhado com a GUI
 
 ## 8. Estado atual
 
-- [x] Implementação completa do pipeline em `run_scraper.py` + `scraper/*`
+- [x] Implementacao completa do pipeline em `run_scraper.py` + `scraper/*`
 - [x] Interface visual local integrada ao fluxo principal
-- [x] Documentação principal, manual e changelog alinhados com a operação atual
+- [x] Documentacao principal, manual e changelog alinhados com a operacao atual

@@ -17,6 +17,7 @@ from markdownify import markdownify as html_to_markdown
 from .config import ScraperConfig
 from .extractor import PageExtractor
 from .models import PageDocument
+from .reporting import build_runtime_status
 from .site_profiles import resolve_site_profile
 from .storage import StorageManager
 from .url_utils import canonicalize_url, infer_asset_bucket, make_absolute_url
@@ -58,6 +59,7 @@ class QuickWikiCrawler:
         self.storage = StorageManager(self.config.normalized_output_dir())
         self.extractor = PageExtractor(self.profile)
         self.rate_limiter = AsyncRateLimiter(self.config.rate_limit_per_sec)
+        self.run_config = self.config.to_runtime_dict()
 
         self.queue: asyncio.Queue[str | None] = asyncio.Queue()
         self.state_lock = asyncio.Lock()
@@ -94,13 +96,21 @@ class QuickWikiCrawler:
             "failed_pages_recovered": 0,
             "source_pages_captured": 0,
         }
+        self.current_phase = "starting"
+        self._persist_runtime_status_now("starting")
 
     async def run(self) -> dict[str, Any]:
         pending = self._bootstrap_state()
         if not pending:
             self.logger.warning("Nenhuma URL pendente para processar.")
             self._finalize_stats()
-            self.storage.finalize(self.stats, failed_pages=self.failed_pages, site_profile=self.profile)
+            self.storage.finalize(
+                self.stats,
+                failed_pages=self.failed_pages,
+                site_profile=self.profile,
+                run_config=self.run_config,
+            )
+            self._persist_runtime_status_now("completed")
             return self.stats
 
         for url in pending:
@@ -115,8 +125,10 @@ class QuickWikiCrawler:
             timeout=timeout,
             limits=limits,
         ) as client:
+            await self._persist_runtime_status("bootstrapping")
             await self._load_robots(client)
             await self._bootstrap_from_mediawiki_api(client)
+            await self._persist_runtime_status("crawling")
 
             workers = [asyncio.create_task(self._worker_loop(client, idx)) for idx in range(self.config.workers)]
             await self.queue.join()
@@ -124,20 +136,29 @@ class QuickWikiCrawler:
                 requeued = await self._requeue_failed_pages_for_retry(retry_round)
                 if not requeued:
                     break
+                await self._persist_runtime_status("retrying")
                 await self.queue.join()
+                await self._persist_runtime_status("crawling")
 
             for _ in workers:
                 await self.queue.put(None)
             await asyncio.gather(*workers, return_exceptions=False)
 
         self._finalize_stats()
-        self.storage.finalize(self.stats, failed_pages=self.failed_pages, site_profile=self.profile)
+        await self._persist_runtime_status("finalizing")
+        self.storage.finalize(
+            self.stats,
+            failed_pages=self.failed_pages,
+            site_profile=self.profile,
+            run_config=self.run_config,
+        )
         self.storage.save_checkpoint(
             visited=self.visited,
             pending=self.enqueued.difference(self.visited),
             stats=self.stats,
             failed_pages=self.failed_pages,
         )
+        self._persist_runtime_status_now("completed")
         self.logger.info(
             "Execução concluída: %s páginas salvas, %s assets únicos.",
             self.stats["pages_saved"],
@@ -159,6 +180,7 @@ class QuickWikiCrawler:
                 async with self.state_lock:
                     self.stats["pages_failed"] += 1
                     self.failed_pages[url] = "unexpected_exception"
+                await self._persist_runtime_status()
             finally:
                 self.queue.task_done()
 
@@ -175,6 +197,7 @@ class QuickWikiCrawler:
             self.logger.debug("Robots.txt bloqueou: %s", url)
             async with self.state_lock:
                 self.stats["skipped_robots"] += 1
+            await self._persist_runtime_status()
             return
 
         page_payload, failure_reason = await self._fetch_page_content(client, url)
@@ -182,6 +205,7 @@ class QuickWikiCrawler:
             async with self.state_lock:
                 self.stats["pages_failed"] += 1
                 self.failed_pages[url] = failure_reason or "fetch_failed"
+            await self._persist_runtime_status()
             return
 
         canonical_final = canonicalize_url(
@@ -273,6 +297,7 @@ class QuickWikiCrawler:
                 stats=self.stats,
                 failed_pages=self.failed_pages,
             )
+        await self._persist_runtime_status()
 
     async def _fetch_page_content(
         self,
@@ -887,6 +912,44 @@ class QuickWikiCrawler:
 
         self.enqueued.add(seed)
         return [seed]
+
+    async def _persist_runtime_status(self, phase: str | None = None) -> None:
+        if phase is not None:
+            self.current_phase = phase
+        async with self.state_lock:
+            stats = dict(self.stats)
+            failed_pages = dict(self.failed_pages)
+            visited_count = len(self.visited)
+            enqueued_count = len(self.enqueued)
+            pending_count = len(self.enqueued.difference(self.visited))
+        self.storage.write_runtime_status(
+            build_runtime_status(
+                phase=self.current_phase,
+                stats=stats,
+                failed_pages=failed_pages,
+                visited_count=visited_count,
+                enqueued_count=enqueued_count,
+                pending_count=pending_count,
+                site_profile=self.profile,
+                run_config=self.run_config,
+            )
+        )
+
+    def _persist_runtime_status_now(self, phase: str | None = None) -> None:
+        if phase is not None:
+            self.current_phase = phase
+        self.storage.write_runtime_status(
+            build_runtime_status(
+                phase=self.current_phase,
+                stats=dict(self.stats),
+                failed_pages=dict(self.failed_pages),
+                visited_count=len(self.visited),
+                enqueued_count=len(self.enqueued),
+                pending_count=len(self.enqueued.difference(self.visited)),
+                site_profile=self.profile,
+                run_config=self.run_config,
+            )
+        )
 
     async def _load_robots(self, client: httpx.AsyncClient) -> None:
         if not self.config.respect_robots_txt:

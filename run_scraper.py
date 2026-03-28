@@ -6,19 +6,27 @@ import logging
 import os
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
+from typing import Sequence
 
-from scraper import QuickWikiCrawler, ScraperConfig
-from scraper.gui_server import run_quickwiki_gui
-from scraper.site_profiles import available_site_profile_keys, load_site_profiles, resolve_site_profile
+from scraper.paths import find_source_project_root, resolve_profiles_dir, resolve_project_root
+from scraper.site_profiles import load_site_profiles, resolve_site_profile
+from scraper.version import QUICKWIKI_VERSION, SUPPORTED_BUILTIN_SITE_PROFILES
 
 LOGGER_NAME = "quickwiki.scraper"
 
 
-def parse_args() -> argparse.Namespace:
-    root = Path(__file__).resolve().parent
+def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
+    root = resolve_project_root()
+    default_profiles_dir = resolve_profiles_dir()
     parser = argparse.ArgumentParser(
+        epilog=(
+            "Perfis oficialmente suportados no v1: "
+            + ", ".join(SUPPORTED_BUILTIN_SITE_PROFILES)
+            + ". Perfis externos seguem disponiveis via CLI em modo avancado/preview."
+        ),
         description="QuickWiki: espelhador offline multi-wiki com crawler BFS e extração estruturada."
     )
+    parser.add_argument("--version", action="version", version=f"%(prog)s {QUICKWIKI_VERSION}")
     parser.add_argument(
         "--seed-url",
         default=None,
@@ -32,7 +40,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--profiles-dir",
         type=Path,
-        default=root / "profiles",
+        default=default_profiles_dir,
         help="Diretório com perfis declarativos de wiki em JSON.",
     )
     parser.add_argument(
@@ -145,7 +153,7 @@ def parse_args() -> argparse.Namespace:
         choices=["DEBUG", "INFO", "WARNING", "ERROR"],
         help="Nível de logs no terminal.",
     )
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
 def configure_logging(output_dir: Path, level_name: str) -> None:
@@ -173,6 +181,9 @@ def configure_logging(output_dir: Path, level_name: str) -> None:
 
 
 async def async_main(args: argparse.Namespace) -> int:
+    from scraper.config import ScraperConfig
+    from scraper.crawler import QuickWikiCrawler
+
     output_dir = args.output_dir.expanduser().resolve()
     configure_logging(output_dir, args.log_level)
 
@@ -185,9 +196,7 @@ async def async_main(args: argparse.Namespace) -> int:
         except (FileNotFoundError, KeyError, ValueError) as exc:
             logger.error("%s", exc)
             return 2
-        for key in available_site_profile_keys(args.profiles_dir, extra_profile_files=extra_profile_files):
-            if key == "auto":
-                continue
+        for key in sorted(profiles):
             profile = profiles[key]
             logger.info("Perfil=%s | label=%s | seed=%s", profile.key, profile.label, profile.default_seed_url)
         if args.validate_site_profiles:
@@ -233,7 +242,7 @@ async def async_main(args: argparse.Namespace) -> int:
     stats = await crawler.run()
 
     logging.getLogger(LOGGER_NAME).info(
-        "Finalizado. Perfil=%s | páginas salvas=%s | assets novos=%s | duração=%ss",
+        "Finalizado. Perfil=%s | páginas salvas=%s | assets baixados=%s | duração=%ss",
         profile.label,
         stats.get("pages_saved"),
         stats.get("assets_downloaded"),
@@ -265,11 +274,20 @@ def serve_output(output_dir: Path, port: int) -> int:
     return 0
 
 
-def main() -> int:
-    args = parse_args()
+def main(argv: Sequence[str] | None = None) -> int:
+    args = parse_args(argv)
     if args.gui:
+        from scraper.gui_server import run_quickwiki_gui
+
+        source_project_root = find_source_project_root()
         configure_logging(args.output_dir.expanduser().resolve(), args.log_level)
-        return run_quickwiki_gui(Path(__file__).resolve().parent, args.gui_port)
+        return run_quickwiki_gui(
+            resolve_project_root(),
+            args.gui_port,
+            profiles_dir=args.profiles_dir,
+            docs_root=source_project_root,
+            manual_root=(source_project_root / "Manual do Usuário") if source_project_root else None,
+        )
     exit_code = asyncio.run(async_main(args))
     if exit_code != 0:
         return exit_code

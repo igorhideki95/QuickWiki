@@ -11,15 +11,62 @@ permissions:
 
 jobs:
   verify:
-    name: Install and validate
-    runs-on: ubuntu-latest
+    name: Release Gate (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - run: python -m pip install --upgrade pip
-      - run: pip install -r requirements.txt
-      - run: python -m unittest discover -s tests -v
-      - run: python -m compileall run_scraper.py scraper tests
-      - run: python -m unittest discover -q
+
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+
+      - name: Install packaging checks
+        run: python -m pip install build twine
+
+      - name: Build distribution
+        run: python -m build
+
+      - name: Verify distribution metadata
+        run: python -m twine check dist/*
+
+      - name: Install QuickWiki from source
+        run: pip install .
+
+      - name: Run unit tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Compile sources
+        run: python -m compileall run_scraper.py quickwiki scraper tests
+
+      - name: Smoke check CLI help
+        run: quickwiki --help
+
+      - name: Smoke check module entrypoint help
+        run: python -m quickwiki --help
+
+      - name: Smoke check CLI version
+        run: quickwiki --version
+
+      - name: Smoke check module entrypoint version
+        run: python -m quickwiki --version
+
+      - name: Smoke check bundled profiles list
+        run: python -m quickwiki --list-site-profiles
+
+      - name: Smoke check bundled profiles validation
+        run: python -m quickwiki --validate-site-profiles
+
+      - name: Smoke check installed module outside repo root
+        run: >
+          python -c "import pathlib, subprocess, sys, tempfile;
+          tempdir = pathlib.Path(tempfile.mkdtemp());
+          subprocess.run([sys.executable, '-m', 'quickwiki', '--version'], cwd=tempdir, check=True);
+          subprocess.run([sys.executable, '-m', 'quickwiki', '--list-site-profiles'], cwd=tempdir, check=True);
+          subprocess.run([sys.executable, '-m', 'quickwiki', '--validate-site-profiles'], cwd=tempdir, check=True)"

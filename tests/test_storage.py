@@ -9,6 +9,7 @@ from pathlib import Path
 from scraper.models import PageDocument
 from scraper.site_profiles import resolve_site_profile
 from scraper.storage import StorageManager
+from scraper.version import QUICKWIKI_VERSION
 
 
 class StorageTests(unittest.TestCase):
@@ -66,10 +67,31 @@ class StorageTests(unittest.TestCase):
 
         self.storage.save_page(page_a)
         self.storage.save_page(page_b)
-        self.storage.finalize({"pages_saved": 2}, failed_pages={}, site_profile=profile)
+        self.storage.finalize(
+            {
+                "pages_saved": 2,
+                "pages_attempted": 3,
+                "source_pages_captured": 1,
+                "started_at": "2026-03-24T00:00:00+00:00",
+                "finished_at": "2026-03-24T00:01:00+00:00",
+            },
+            failed_pages={"https://www.tibiawiki.com.br/wiki/Falha": "http_429"},
+            site_profile=profile,
+            run_config={
+                "max_pages": 25,
+                "capture_wiki_source": True,
+                "respect_robots_txt": True,
+            },
+        )
 
         manifest = json.loads((self.tempdir / "data/indexes/pages_manifest.json").read_text(encoding="utf-8"))
-        self.assertEqual(len(manifest), 2)
+        self.assertEqual(manifest["schema_version"], 1)
+        self.assertEqual(manifest["quickwiki_version"], QUICKWIKI_VERSION)
+        self.assertEqual(len(manifest["pages"]), 2)
+
+        summary = json.loads((self.tempdir / "data/indexes/summary.json").read_text(encoding="utf-8"))
+        self.assertEqual(summary["schema_version"], 1)
+        self.assertEqual(summary["quickwiki_version"], QUICKWIKI_VERSION)
 
         html_a = (self.tempdir / self.storage.pages_manifest[slug_a]["paths"]["html"]).read_text(encoding="utf-8")
         self.assertIn("Links internos", html_a)
@@ -82,13 +104,41 @@ class StorageTests(unittest.TestCase):
         self.assertTrue((self.tempdir / self.storage.pages_manifest[slug_a]["paths"]["source"]).exists())
 
         diagnostics = json.loads((self.tempdir / "data/indexes/profile_diagnostics.json").read_text(encoding="utf-8"))
+        self.assertEqual(diagnostics["schema_version"], 1)
+        self.assertEqual(diagnostics["quickwiki_version"], QUICKWIKI_VERSION)
+        self.assertEqual(diagnostics["profile"]["schema_version"], 1)
+        self.assertEqual(diagnostics["profile"]["wiki_family"], "mediawiki")
         self.assertEqual(diagnostics["profile"]["key"], "tibiawiki_br")
         self.assertIn("title_selectors", diagnostics["selectors"])
+        self.assertEqual(diagnostics["files"]["run_report"], "data/indexes/run_report.json")
+
+        report = json.loads((self.tempdir / "data/indexes/run_report.json").read_text(encoding="utf-8"))
+        self.assertEqual(report["schema_version"], 1)
+        self.assertEqual(report["quickwiki_version"], QUICKWIKI_VERSION)
+        self.assertEqual(report["site_profile"]["key"], "tibiawiki_br")
+        self.assertEqual(report["health"]["status"], "warning")
+        self.assertEqual(report["failed_pages"]["count"], 1)
+        self.assertEqual(report["artifacts"]["admin_page"], "admin/index.html")
+
+        failed_payload = json.loads((self.tempdir / "data/indexes/failed_pages.json").read_text(encoding="utf-8"))
+        self.assertEqual(failed_payload["schema_version"], 1)
+        self.assertEqual(failed_payload["quickwiki_version"], QUICKWIKI_VERSION)
+        self.assertEqual(failed_payload["count"], 1)
+
+        page_json = json.loads(
+            (self.tempdir / self.storage.pages_manifest[slug_a]["paths"]["json"]).read_text(encoding="utf-8")
+        )
+        self.assertEqual(page_json["schema_version"], 1)
+        self.assertEqual(page_json["quickwiki_version"], QUICKWIKI_VERSION)
+
+        reloaded_storage = StorageManager(self.tempdir)
+        self.assertEqual(set(reloaded_storage.pages_manifest), {slug_a, slug_b})
 
         admin_html = (self.tempdir / "admin/index.html").read_text(encoding="utf-8")
         self.assertIn("QuickWiki Admin", admin_html)
         self.assertIn("Painel do perfil ativo", admin_html)
         self.assertIn("JSON do perfil", admin_html)
+        self.assertIn("Relatório da execução", admin_html)
 
 
 if __name__ == "__main__":

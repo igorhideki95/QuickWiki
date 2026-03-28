@@ -11,6 +11,7 @@ import httpx
 
 from scraper import QuickWikiCrawler, ScraperConfig
 from scraper.models import PageDocument
+from scraper.version import QUICKWIKI_VERSION
 
 
 class CrawlerRuntimeTests(unittest.IsolatedAsyncioTestCase):
@@ -186,6 +187,31 @@ class CrawlerRuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn('data-original-src="https://static.wikia.nocookie.net/tibia/images/a/ab/Dragon.gif"', page.html_clean)
         self.assertNotEqual(page.markdown, "before")
         self.assertNotEqual(page.content_hash, "before")
+
+    def test_persist_runtime_status_writes_versioned_public_payload(self) -> None:
+        self.crawler.stats["pages_saved"] = 3
+        self.crawler.stats["pages_attempted"] = 4
+        self.crawler.failed_pages = {"https://www.tibiawiki.com.br/wiki/Falha": "http_429"}
+        self.crawler.visited = {
+            self.seed_url,
+            "https://www.tibiawiki.com.br/wiki/Thais",
+        }
+        self.crawler.enqueued = {
+            self.seed_url,
+            "https://www.tibiawiki.com.br/wiki/Thais",
+            "https://www.tibiawiki.com.br/wiki/Kazordoon",
+        }
+
+        self.crawler._persist_runtime_status_now("crawling")
+
+        runtime_payload = json.loads(
+            (self.config.output_dir / "checkpoints" / "runtime_status.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(runtime_payload["schema_version"], 1)
+        self.assertEqual(runtime_payload["quickwiki_version"], QUICKWIKI_VERSION)
+        self.assertEqual(runtime_payload["product"]["version"], QUICKWIKI_VERSION)
+        self.assertEqual(runtime_payload["phase"], "crawling")
+        self.assertEqual(runtime_payload["queue"]["pending"], 1)
 
 
 if __name__ == "__main__":

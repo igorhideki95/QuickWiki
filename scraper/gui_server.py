@@ -19,6 +19,7 @@ from urllib.parse import unquote, urlparse
 
 from .gui_assets import GUI_CSS, GUI_INDEX_HTML, GUI_JS
 from .site_profiles import WikiSiteProfile, load_site_profiles
+from .version import build_product_payload
 
 
 LOGGER_NAME = "quickwiki.scraper"
@@ -28,6 +29,9 @@ GUI_PROJECT_DOCS = {
     "readme": Path("README.md"),
     "changelog": Path("CHANGELOG.md"),
     "technical-docs": Path("DOCUMENTACAO_TECNICA.md"),
+    "artifact-contracts": Path("docs") / "ARTIFACT_CONTRACTS.md",
+    "profile-schema": Path("docs") / "PROFILE_SCHEMA.md",
+    "release-checklist": Path("docs") / "RELEASE_CHECKLIST.md",
 }
 
 
@@ -120,7 +124,7 @@ def build_scraper_subprocess_command(
     *,
     python_executable: str | None = None,
 ) -> list[str]:
-    command = [python_executable or sys.executable, "run_scraper.py"]
+    command = [python_executable or sys.executable, "-m", "quickwiki"]
     command.extend(["--site-profile", request.site_profile])
     command.extend(["--output-dir", str(request.output_dir)])
     command.extend(["--workers", str(request.workers)])
@@ -163,9 +167,24 @@ def is_textual_content_type(content_type: str) -> bool:
 
 
 class QuickWikiGuiApp:
-    def __init__(self, project_root: Path) -> None:
-        self.project_root = project_root
-        self.profiles_dir = (project_root / "profiles").resolve()
+    def __init__(
+        self,
+        project_root: Path,
+        *,
+        profiles_dir: Path | None = None,
+        docs_root: Path | None = None,
+        manual_root: Path | None = None,
+    ) -> None:
+        self.project_root = project_root.resolve()
+        self.profiles_dir = (profiles_dir or (self.project_root / "profiles")).resolve()
+        default_docs_root = self.project_root if (self.project_root / "README.md").exists() else None
+        default_manual_root = self.project_root / "Manual do Usuário"
+        self.docs_root = docs_root.resolve() if docs_root is not None else default_docs_root
+        self.manual_root = (
+            manual_root.resolve()
+            if manual_root is not None
+            else default_manual_root.resolve() if default_manual_root.exists() else None
+        )
         self.logger = logging.getLogger(LOGGER_NAME)
         self.lock = threading.Lock()
         self.process: subprocess.Popen[str] | None = None
@@ -202,6 +221,7 @@ class QuickWikiGuiApp:
             log_lines = self._tail_log_file(output_dir)
 
         return {
+            "product": build_product_payload(),
             "profiles": self._profiles_payload(),
             "defaults": {
                 "seed_url": "",
@@ -209,12 +229,16 @@ class QuickWikiGuiApp:
             },
             "run": run_state,
             "summary": self._load_summary(output_dir),
+            "runtime": self._load_runtime_status(output_dir),
+            "report": self._load_run_report(output_dir),
             "logs": log_lines,
             "links": {
                 "mirror": "/mirror/index.html",
                 "admin": "/mirror/admin/index.html",
                 "summary": "/mirror/data/indexes/summary.json",
-                "manual": "/manual/index.html",
+                "report": "/mirror/data/indexes/run_report.json",
+                "runtime": "/mirror/checkpoints/runtime_status.json",
+                "manual": "/manual/index.html" if self.manual_root and self.manual_root.exists() else "",
             },
         }
 
@@ -293,13 +317,15 @@ class QuickWikiGuiApp:
                 self.process = None
             self.logs.append(f"[studio] Execucao finalizada em {finished_at} com exit code {exit_code}.")
 
-    def _profiles_payload(self) -> list[dict[str, str]]:
+    def _profiles_payload(self) -> list[dict[str, Any]]:
         payload = [
             {
                 "key": "auto",
                 "label": "Auto detectar",
                 "description": "Detecta o perfil ideal a partir do dominio da seed URL.",
                 "default_seed_url": "",
+                "schema_version": 0,
+                "wiki_family": "auto",
             }
         ]
         for key in sorted(self.site_profiles):
@@ -310,6 +336,8 @@ class QuickWikiGuiApp:
                     "label": profile.label,
                     "description": profile.description,
                     "default_seed_url": profile.default_seed_url,
+                    "schema_version": profile.schema_version,
+                    "wiki_family": profile.wiki_family,
                 }
             )
         return payload
@@ -326,14 +354,13 @@ class QuickWikiGuiApp:
             raise ValueError(f"Perfil desconhecido para a GUI: {site_profile}")
 
     def _load_summary(self, output_dir: Path) -> dict[str, Any]:
-        summary_path = output_dir / "data" / "indexes" / "summary.json"
-        if not summary_path.exists():
-            return {}
-        try:
-            payload = json.loads(summary_path.read_text(encoding="utf-8"))
-        except json.JSONDecodeError:
-            return {}
-        return payload if isinstance(payload, dict) else {}
+        return self._load_json_file(output_dir / "data" / "indexes" / "summary.json")
+
+    def _load_runtime_status(self, output_dir: Path) -> dict[str, Any]:
+        return self._load_json_file(output_dir / "checkpoints" / "runtime_status.json")
+
+    def _load_run_report(self, output_dir: Path) -> dict[str, Any]:
+        return self._load_json_file(output_dir / "data" / "indexes" / "run_report.json")
 
     def _tail_log_file(self, output_dir: Path) -> list[str]:
         log_path = output_dir / "logs" / "scraper.log"
@@ -344,6 +371,15 @@ class QuickWikiGuiApp:
         except OSError:
             return []
         return lines[-80:]
+
+    def _load_json_file(self, path: Path) -> dict[str, Any]:
+        if not path.exists():
+            return {}
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            return {}
+        return payload if isinstance(payload, dict) else {}
 
 
 class QuickWikiGuiHandler(BaseHTTPRequestHandler):
@@ -365,15 +401,27 @@ class QuickWikiGuiHandler(BaseHTTPRequestHandler):
             self._send_json(self.server.app.state_payload())
             return
         if path.startswith("/manual/"):
-            self._serve_from_dir(self.server.app.project_root / "Manual do Usuário", path.removeprefix("/manual/"))
+            if self.server.app.manual_root is None:
+                self._send_text(build_missing_project_docs_page("manual do usuario"), "text/html; charset=utf-8")
+                return
+            self._serve_from_dir(self.server.app.manual_root, path.removeprefix("/manual/"))
             return
         if path.startswith("/mirror/"):
             self._serve_from_dir(self.server.app.active_output_dir, path.removeprefix("/mirror/"))
             return
         if path.startswith("/docs/"):
-            document = resolve_gui_project_doc(self.server.app.project_root, path.removeprefix("/docs/"))
+            if self.server.app.docs_root is None:
+                self._send_text(
+                    build_missing_project_docs_page("documentacao do projeto"),
+                    "text/html; charset=utf-8",
+                )
+                return
+            document = resolve_gui_project_doc(self.server.app.docs_root, path.removeprefix("/docs/"))
             if document is None:
-                self.send_error(HTTPStatus.NOT_FOUND, "Documento nao encontrado.")
+                self._send_text(
+                    build_missing_project_docs_page("documentacao do projeto"),
+                    "text/html; charset=utf-8",
+                )
                 return
             self._serve_file(document)
             return
@@ -489,9 +537,84 @@ def resolve_gui_project_doc(project_root: Path, doc_key: str) -> Path | None:
     return candidate
 
 
-def run_quickwiki_gui(project_root: Path, port: int, host: str = "127.0.0.1") -> int:
+def build_missing_project_docs_page(label: str) -> str:
+    return f"""<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>QuickWiki Studio - Recurso indisponivel</title>
+    <style>
+      :root {{
+        color-scheme: light;
+        --bg: #f7f1e8;
+        --panel: rgba(255, 251, 246, 0.96);
+        --border: rgba(142, 47, 26, 0.16);
+        --accent: #8e2f1a;
+        --text: #3f281f;
+      }}
+      body {{
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background:
+          radial-gradient(circle at top, rgba(255, 255, 255, 0.82), transparent 44%),
+          linear-gradient(160deg, #f5ede1 0%, #f3efe8 48%, #e9f0ed 100%);
+        color: var(--text);
+        font: 16px/1.6 "Segoe UI", sans-serif;
+        padding: 24px;
+      }}
+      main {{
+        max-width: 720px;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        padding: 28px;
+        box-shadow: 0 18px 50px rgba(115, 80, 61, 0.12);
+      }}
+      h1 {{
+        margin: 0 0 12px;
+        color: var(--accent);
+        font: 700 clamp(1.8rem, 4vw, 2.6rem)/1.05 Georgia, serif;
+      }}
+      p {{
+        margin: 0 0 12px;
+      }}
+      code {{
+        background: rgba(142, 47, 26, 0.08);
+        border-radius: 999px;
+        padding: 2px 8px;
+      }}
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Recurso nao empacotado nesta instalacao</h1>
+      <p>O atalho para <strong>{label}</strong> depende do checkout completo do repositorio.</p>
+      <p>Para abrir esta parte da experiencia do QuickWiki Studio, execute a GUI a partir da raiz do projeto ou defina <code>QUICKWIKI_ROOT</code> para apontar para um checkout valido.</p>
+      <p>O crawler, a validacao de perfis built-in e o fluxo principal continuam disponiveis nesta instalacao.</p>
+    </main>
+  </body>
+</html>"""
+
+
+def run_quickwiki_gui(
+    project_root: Path,
+    port: int,
+    host: str = "127.0.0.1",
+    *,
+    profiles_dir: Path | None = None,
+    docs_root: Path | None = None,
+    manual_root: Path | None = None,
+) -> int:
     logger = logging.getLogger(LOGGER_NAME)
-    app = QuickWikiGuiApp(project_root)
+    app = QuickWikiGuiApp(
+        project_root,
+        profiles_dir=profiles_dir,
+        docs_root=docs_root,
+        manual_root=manual_root,
+    )
     server = QuickWikiGuiServer((host, port), app)
     logger.info("QuickWiki Studio disponivel em http://%s:%s", host, port)
     logger.info("Abra a interface no navegador e pressione Ctrl+C para encerrar.")

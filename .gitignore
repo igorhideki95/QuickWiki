@@ -12,6 +12,7 @@ htmlcov/
 dist/
 build/
 .venv/
+.venv*/
 venv/
 pip-wheel-metadata/
 .ipynb_checkpoints/

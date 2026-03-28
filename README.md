@@ -1,212 +1,110 @@
 # QuickWiki
 
-QuickWiki e um espelhador offline multi-wiki com foco em MediaWiki/Fandom,
-preparado para crescer sem acoplar a logica a um unico site.
+QuickWiki e um espelhador offline multi-wiki pensado para preservar conteudo util, operar localmente e transformar crawls em artefatos navegaveis, auditaveis e bonitos o suficiente para portfolio.
 
-## Ownership
+![QuickWiki Studio Desktop](docs/assets/quickwiki-studio-desktop.png)
 
-Igor Hideki (`@IgorDev`) e o criador e responsavel principal pelo QuickWiki,
-atuando como idealizador, owner de produto, direcao tecnica e gestao da
-evolucao do projeto.
+## O que o projeto entrega
 
-## QuickBrain
+- crawl offline com foco em MediaWiki e Fandom
+- perfis declarativos versionados por wiki
+- GUI local para iniciar, acompanhar e validar execucoes
+- artefatos HTML e JSON prontos para navegacao, auditoria e troubleshooting
+- contratos de artefatos e schema de perfis documentados
+- instalacao source-first com suporte a `quickwiki`, `python -m quickwiki` e `python run_scraper.py`
 
-Este repositorio se conecta ao `QuickBrain` local em `C:\IgorDev\QuickBrain`.
+## Destaques de portfolio
 
-O `QuickBrain` serve como memoria operacional da workspace: identidade,
-portfolio, publish state, decisoes transversais e aprendizado continuo. Sempre
-que o papel do QuickWiki no portfolio mudar, esse contexto deve ser resumido la
-de forma curta e cumulativa.
+- arquitetura separada entre CLI, crawler, storage, GUI e contratos publicos
+- trilha de release com CI, build de distribuicao, smoke tests e checklist
+- documentacao operacional, tecnica e de governanca no proprio repositorio
+- interface local `QuickWiki Studio` com foco em observabilidade de runtime
 
-## Publication Status
+## Capturas da interface
 
-- GitHub visibility: `private`
-- Curadoria atual: baseline privada publicada e sincronizada com o QuickBrain
-- Abertura publica futura: somente apos rodada especifica de showcase e release
-  polish
-
-## Caminho recomendado
-
-O projeto agora possui uma GUI local chamada `QuickWiki Studio`, pensada para
-facilitar onboarding, operacao basica e acompanhamento visual de crawls.
-
-Para abrir a interface:
-
-```bash
-python run_scraper.py --gui
-```
-
-A GUI sobe localmente por padrao em `http://127.0.0.1:8877`.
-
-## Documentacao complementar
-
-- `DOCUMENTACAO_TECNICA.md`: analise tecnica consolidada e arquitetura
-- `CHANGELOG.md`: historico organizado das mudancas
-- `Manual do Usuario/README.md`: indice do manual em Markdown
-- `Manual do Usuario/index.html`: versao visual e navegavel do manual
-
-## O que o projeto entrega hoje
-
-- perfis declarativos em JSON para diferentes wikis
-- auto-deteccao por dominio ou escolha explicita de perfil
-- crawl BFS com bootstrap opcional via MediaWiki API
-- captura de HTML, Markdown, JSON e wikitext bruto
-- indices auxiliares para busca offline, backlinks, categorias, duplicados e
-  falhas
-- frontend offline com assets estaticos, tema por perfil e painel admin
-- GUI local `QuickWiki Studio` para configurar, validar e acompanhar execucoes
-
-## Perfis de wiki
-
-Os perfis ficam em `profiles/*.json` e controlam:
-
-- dominios permitidos
-- seed padrao
-- caminho da API
-- seletores de titulo, conteudo e categorias
-- ruido extra a remover
-- tema visual do espelho
-
-Perfis incluidos hoje:
-
-- `tibiawiki_br`
-- `tibia_fandom`
-
-Tambem e possivel carregar perfis externos com `--site-profile-file` ou
-apontar outro diretorio com `--profiles-dir`.
+![QuickWiki Studio Mobile](docs/assets/quickwiki-studio-mobile.png)
 
 ## Instalacao
 
 ```bash
-cd <diretorio-do-projeto>
-python -m pip install -r requirements.txt
+git clone <repo-url>
+cd QuickWiki
+python -m pip install .
 ```
 
-## Primeiros passos
+Entrypoints suportados:
 
-### Opcao A - GUI local
+- principal: `quickwiki`
+- modulo: `python -m quickwiki`
+- compatibilidade em checkout local: `python run_scraper.py`
+
+Se `quickwiki` nao for reconhecido no Windows apos a instalacao, use `python -m quickwiki` ou ajuste o `PATH` da pasta `Scripts` do Python do usuario.
+
+Os perfis built-in oficiais tambem funcionam a partir do pacote instalado fora da raiz do repositorio. Use `QUICKWIKI_ROOT`, `--profiles-dir` ou `--site-profile-file` quando quiser apontar para uma clone especifica, perfis externos ou caminhos customizados.
+
+## Quickstart
 
 ```bash
-python run_scraper.py --validate-site-profiles
-python run_scraper.py --gui
+python -m quickwiki --validate-site-profiles
+python -m quickwiki --list-site-profiles
+python -m quickwiki --site-profile tibiawiki_br --max-pages 25
+python -m quickwiki --serve-only --output-dir output
 ```
 
-Depois disso:
-
-1. valide os perfis pela propria GUI
-2. rode um crawl pequeno com `--max-pages` configurado na tela
-3. abra o espelho offline pelos atalhos da interface
-
-### Opcao B - CLI direta
+Para abrir a GUI local:
 
 ```bash
-python run_scraper.py --max-pages 25 --workers 6 --rate-limit 2
-python run_scraper.py --serve-only --output-dir output
+python -m quickwiki --gui
 ```
 
-## Comandos uteis
+## Artefatos gerados
 
-### Abrir a GUI local
+Uma execucao tipica produz:
 
-```bash
-python run_scraper.py --gui
-```
+- `output/index.html`
+- `output/admin/index.html`
+- `output/data/indexes/summary.json`
+- `output/data/indexes/run_report.json`
+- `output/checkpoints/runtime_status.json`
+- `output/data/indexes/pages_manifest.json`
+- `output/data/indexes/failed_pages.json`
+- `output/logs/scraper.log`
 
-### Usar outra porta para a GUI
+## Validacao atual
 
-```bash
-python run_scraper.py --gui --gui-port 8899
-```
+Validado localmente em 2026-03-28:
 
-### Crawl padrao
+- `python -m unittest discover -s tests -v`
+- `python -m build`
+- `python -m twine check dist/*`
+- `python -m pip install .`
+- `python -m quickwiki --version`
+- `python -m quickwiki --list-site-profiles`
+- `python -m quickwiki --validate-site-profiles`
+- smoke crawl curto com perfil built-in
+- smoke de modulo instalado fora da raiz do repositorio
 
-```bash
-python run_scraper.py --workers 8 --rate-limit 2
-```
+## Documentacao
 
-### Usar perfil especifico
+- [docs/README.md](docs/README.md)
+- [docs/STATUS.md](docs/STATUS.md)
+- [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md)
+- [docs/PROFILE_SCHEMA.md](docs/PROFILE_SCHEMA.md)
+- [docs/ARTIFACT_CONTRACTS.md](docs/ARTIFACT_CONTRACTS.md)
+- [Manual do Usuario/README.md](Manual%20do%20Usu%C3%A1rio/README.md)
+- [DOCUMENTACAO_TECNICA.md](DOCUMENTACAO_TECNICA.md)
+- [CHANGELOG.md](CHANGELOG.md)
+- [CONTRIBUTING.md](CONTRIBUTING.md)
+- [SECURITY.md](SECURITY.md)
+- [SUPPORT.md](SUPPORT.md)
+- [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 
-```bash
-python run_scraper.py --site-profile tibia_fandom
-```
+## Suporte de v1
 
-### Listar perfis carregados
+- perfis built-in do projeto sao o escopo oficialmente suportado
+- perfis externos continuam disponiveis via CLI como modo avancado/preview
+- a GUI prioriza o fluxo guiado para os perfis built-in
 
-```bash
-python run_scraper.py --list-site-profiles
-```
+## Licenca
 
-### Validar perfis carregados
-
-```bash
-python run_scraper.py --validate-site-profiles
-```
-
-### Carregar perfil extra por arquivo
-
-```bash
-python run_scraper.py --site-profile-file .\\profiles\\minha_wiki.json --site-profile minha_wiki
-```
-
-### Usar outro diretorio de perfis
-
-```bash
-python run_scraper.py --profiles-dir .\\profiles_custom --site-profile auto
-```
-
-### Servir o espelho por HTTP local
-
-```bash
-python run_scraper.py --serve-only --output-dir output
-```
-
-## Estrutura de saida
-
-```text
-output/
-  index.html
-  admin/
-    index.html
-  static/
-    mirror.css
-    mirror-index.js
-  checkpoints/
-    state.json
-  logs/
-    scraper.log
-  data/
-    pages/
-      html/<shard>/<slug>.html
-      markdown/<shard>/<slug>.md
-      json/<shard>/<slug>.json
-      source/<shard>/<slug>.wiki
-    assets/
-      <bucket>/<shard>/<sha256>.<ext>
-    indexes/
-      assets_by_hash.json
-      assets_by_url.json
-      backlinks.json
-      categories.json
-      duplicate_content.json
-      failed_pages.json
-      link_graph.json
-      pages_manifest.json
-      profile_diagnostics.json
-      search_index.js
-      summary.json
-      url_to_slug.json
-```
-
-## Observacoes de operacao
-
-- `--site-profile auto` tenta detectar a wiki pela `--seed-url`
-- `--api-bootstrap-mode auto` so ativa bootstrap completo quando `--max-pages`
-  nao e usado
-- `--retry-failed-passes` e mais util em crawls completos
-- o QuickWiki salva links para `action=edit`, `action=raw` e o `.wiki` local
-  quando a wiki permite capturar o source
-- abra `output/index.html` para navegar no espelho
-- abra `output/admin/index.html` para inspecionar perfil, seletores, tema e
-  atalhos de diagnostico
-- os arquivos em `data/indexes/` foram pensados para consumo por ferramentas
-  externas, IA e futuras telas administrativas
+QuickWiki e distribuido sob a licenca [MIT](LICENSE). O projeto pode ser estudado, reutilizado e evoluido pela comunidade, mantendo os creditos e o aviso de licenca.

@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=77.0.3", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "quickwiki"
+version = "1.0.0"
+description = "Offline multi-wiki mirror generator focused on MediaWiki and Fandom."
+readme = "README.md"
+requires-python = ">=3.11"
+keywords = ["offline", "mirror", "wiki", "mediawiki", "fandom", "crawler"]
+dependencies = [
+  "beautifulsoup4>=4.12.3",
+  "httpx>=0.27.0",
+  "lxml>=5.2.2",
+  "markdownify>=0.13.1",
+]
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+  { name = "Igor Hideki" },
+]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Operating System :: OS Independent",
+]
+
+[project.optional-dependencies]
+dev = [
+  "build>=1.2.2",
+  "twine>=6.1.0",
+]
+
+[project.scripts]
+quickwiki = "quickwiki:main"
+
+[tool.setuptools]
+include-package-data = true
+py-modules = ["run_scraper"]
+
+[tool.setuptools.package-data]
+scraper = ["bundled/profiles/*.json"]
+
+[tool.setuptools.packages.find]
+include = ["quickwiki*", "scraper*"]

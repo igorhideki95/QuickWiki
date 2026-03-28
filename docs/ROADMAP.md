@@ -1,39 +1,34 @@
 # Roadmap
 
-## Fase 1 - Fundacao do crawler
+Estado atual: RC1 e RC2 fechados localmente em 2026-03-28, com a V1 source-first pronta para abertura publica sob licenca MIT.
 
-- [x] configuracao centralizada
-- [x] canonicalizacao de URLs
-- [x] crawler BFS
-- [x] checkpoint e retomada
-- [x] respeito a `robots.txt`
+## RC1 - Release Polish
 
-## Fase 2 - Extracao e persistencia
+- `quickwiki` como comando canonico documentado.
+- `python -m quickwiki` como fallback sem depender do `PATH`.
+- `python run_scraper.py` mantido como caminho de compatibilidade.
+- README, hub de docs e manual alinhados com a mensagem public-ready v1.
+- GUI com linguagem mais publica, focada nos perfis built-in oficiais.
+- Checklist de instalacao, quickstart e troubleshooting consolidado.
 
-- [x] extracao estruturada de conteudo
-- [x] export em HTML, Markdown e JSON
-- [x] captura de source wiki quando possivel
-- [x] download e deduplicacao de assets
-- [x] geracao de indices auxiliares
+## RC2 - Contract Hardening
 
-## Fase 3 - Operacao local
+- contratos publicos de artefatos versionados por `schema_version`.
+- `quickwiki_version` e metadados de geracao nos JSONs publicos.
+- CI com matriz Windows e Linux.
+- smoke checks para `--help`, `--list-site-profiles` e `--validate-site-profiles`.
 
-- [x] servidor local para espelho offline
-- [x] GUI `QuickWiki Studio`
-- [x] manual do usuario em HTML e Markdown
-- [x] validacao de perfis via CLI
+## V1 Done
 
-## Fase 4 - Robustez operacional
+- release source-first pronta para uso publico.
+- perfis built-in como escopo oficial suportado.
+- GUI, output offline e diagnostico operacional alinhados.
+- distribuicao aberta sob licenca MIT.
 
-- [ ] fortalecer observabilidade e resumo de execucao
-- [ ] ampliar diagnostico de erros de perfil
-- [ ] consolidar backlog tecnico por impacto
-- [ ] revisar UX da GUI para execucoes longas
+## Post-v1
 
-## Fase 5 - Escala e extensibilidade
-
-- [ ] ampliar biblioteca de perfis declarativos
-- [ ] formalizar schema versionado para perfis
-- [ ] preparar integracoes com ferramentas externas de busca e IA
-- [ ] documentar criterios de compatibilidade por familia de wiki
-
+- schema versionado para perfis declarativos, com base v1 ja entregue.
+- matriz de compatibilidade por familia de wiki.
+- onboarding guiado para perfis externos.
+- decomposicao futura de crawler e storage em subservicos menores.
+- integracoes mais amplas com ferramentas externas de busca e IA.

@@ -1,51 +1,62 @@
-# 01 - Instalação e Preparação
+# 01 - Instalacao e Preparacao
 
 ## Objetivo
 
-Deixar o QuickWiki pronto para o primeiro uso sem complicação.
+Deixar o QuickWiki pronto para o primeiro uso sem atrito.
 
-## Pré-requisitos
+## Pre-requisitos
 
-Você precisa ter:
+Voce precisa ter:
 
 - Python instalado;
 - acesso ao terminal na pasta do projeto;
-- conexão com a internet para instalar dependências e acessar a wiki alvo.
+- conexao com a internet para instalar dependencias e acessar a wiki alvo.
 
-## Passo 1 — Entrar na pasta do projeto
+## Passo 1 - Entrar na pasta do projeto
 
 ```bash
 cd <diretorio-do-projeto>
 ```
 
-## Passo 2 — Instalar dependências
+## Passo 2 - Instalar a partir do source
 
 ```bash
-python -m pip install -r requirements.txt
+python -m pip install .
 ```
 
-## Passo 3 — Confirmar que a CLI está disponível
+Isso instala o comando canonico `quickwiki`.
+
+## Passo 3 - Confirmar que a CLI esta disponivel
 
 ```bash
+quickwiki --help
+```
+
+Se o Windows ainda nao reconhecer `quickwiki`, abra um novo terminal. Se mesmo assim nao resolver, use `python -m quickwiki --help` enquanto ajusta o `PATH` do Scripts do Python do usuario.
+
+Se quiser os fallbacks oficiais:
+
+```bash
+python -m quickwiki --help
 python run_scraper.py --help
 ```
 
-Se tudo estiver certo, o terminal vai mostrar a lista de opções do QuickWiki.
-
-## Passo 4 — Validar os perfis antes do uso
+## Passo 4 - Validar os perfis antes do uso
 
 ```bash
-python run_scraper.py --validate-site-profiles
+quickwiki --validate-site-profiles
 ```
 
-Esse comando é recomendado porque confirma que os perfis JSON carregados pelo sistema estão válidos antes de iniciar um crawl.
+Esse comando confirma se os perfis JSON carregados pelo sistema estao validos antes de iniciar um crawl.
 
-## Checklist rápido
+## Checklist rapido
 
-- dependências instaladas;
-- `--help` funcionando;
-- perfis validados com sucesso.
+- dependencias instaladas;
+- `quickwiki --help` funcionando;
+- `python -m quickwiki --help` funcionando;
+- perfis validados com sucesso;
+- comando `python run_scraper.py --help` ainda disponivel como compatibilidade.
 
-## Próximo passo
+## Proximo passo
 
-Abra `06 - QuickWiki Studio.md` para começar pela interface visual oficial do projeto. Se preferir seguir direto pela trilha CLI, avance então para `02 - Primeiro Espelho.md`.
+Abra `06 - QuickWiki Studio.md` para conhecer a interface visual oficial do projeto. Se preferir seguir direto pela trilha CLI, avance para `02 - Primeiro Espelho.md`.

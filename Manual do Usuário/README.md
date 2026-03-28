@@ -1,40 +1,46 @@
-# Manual do Usuário — QuickWiki
+# Manual do Usuario - QuickWiki
 
-> Guia simples, direto e organizado para usar o QuickWiki do zero.
+> Guia prático para instalar, validar e operar o QuickWiki na trilha source-first da v1.
 
 ## Melhor forma de abrir
 
-Se quiser a versão mais bonita e navegável do manual, abra:
+Se quiser a versao visual do manual, abra:
 
 - `index.html`
 
-## Trilha recomendada hoje
+## Trilha recomendada
 
-Se você quer o fluxo mais prático para começar sem atrito, siga esta ordem:
-
-1. Abra `01 - Instalação e Preparação.md`
+1. Abra `01 - Instalacao e Preparacao.md`
 2. Depois leia `06 - QuickWiki Studio.md`
 3. Use `02 - Primeiro Espelho.md` para o primeiro teste controlado
-4. Consulte `03 - Perfis, Validação e Modos.md` quando quiser personalizar a execução
-5. Use `04 - Navegação Offline.md` para revisar a saída
-6. Se algo falhar, vá para `05 - Problemas Comuns.md`
+4. Consulte `03 - Perfis, Validacao e Modos.md` para entender perfis oficiais e preview
+5. Use `04 - Navegacao Offline.md` para revisar a saida
+6. Se algo falhar, va para `05 - Problemas Comuns.md`
 
-## Fluxo rápido
+## Fluxo rapido
 
 ```bash
-python -m pip install -r requirements.txt
-python run_scraper.py --validate-site-profiles
-python run_scraper.py --gui
+python -m pip install .
+quickwiki --validate-site-profiles
+quickwiki --gui
 ```
 
-## O que você vai aprender
+Se `quickwiki` ainda nao estiver no `PATH`, use:
+
+```bash
+python -m quickwiki --validate-site-profiles
+python -m quickwiki --gui
+```
+
+## O que voce vai aprender
 
 - como preparar o ambiente;
-- como validar os perfis do projeto;
-- como usar a GUI local QuickWiki Studio;
+- como usar o comando canonico `quickwiki`;
+- como validar os perfis built-in oficiais;
+- como tratar perfis externos como preview via CLI;
 - como rodar um espelho de teste;
 - como abrir e navegar no resultado offline;
-- como resolver os problemas mais comuns.
+- como ler os artefatos `summary.json`, `run_report.json` e `runtime_status.json`.
 
 ## Estrutura desta pasta
 
@@ -46,18 +52,22 @@ python run_scraper.py --gui
 - `04-navegacao-offline.html`
 - `05-problemas-comuns.html`
 - `06-gui-studio.html`
-- `01 - Instalação e Preparação.md`
+- `01 - Instalacao e Preparacao.md`
 - `02 - Primeiro Espelho.md`
-- `03 - Perfis, Validação e Modos.md`
-- `04 - Navegação Offline.md`
+- `03 - Perfis, Validacao e Modos.md`
+- `04 - Navegacao Offline.md`
 - `05 - Problemas Comuns.md`
 - `06 - QuickWiki Studio.md`
 
-## Observação importante
+## Observacao importante
 
-Este manual já considera:
+Este manual considera:
 
-- a identidade `QuickWiki`;
-- o comando `--validate-site-profiles`;
+- o comando canonico `quickwiki`;
+- o fallback `python -m quickwiki`;
+- a compatibilidade com `python run_scraper.py`;
+- o modelo source-first, com `QUICKWIKI_ROOT` quando voce quiser apontar para uma clone especifica ou caminhos customizados;
+- os perfis built-in como suporte oficial da v1;
+- os perfis externos como preview avancado via CLI;
 - a GUI local `QuickWiki Studio`;
-- o fluxo de espelho offline já presente no sistema.
+- os artefatos operacionais `runtime_status.json` e `run_report.json`.

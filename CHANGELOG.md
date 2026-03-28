@@ -1,115 +1,67 @@
 # Changelog
 
-Todas as mudanças relevantes do QuickWiki devem ser registradas aqui de forma objetiva e rastreável.
+Todas as mudancas relevantes do QuickWiki devem ser registradas aqui de forma objetiva e rastreavel.
 
-O formato segue uma estrutura simples por data, com agrupamento por tipo de mudança.
-
-## 2026-03-25 — QuickWiki Studio e trilha visual oficial
-
-### Adicionado
-
-- GUI local `QuickWiki Studio`, acessível por `python run_scraper.py --gui`.
-- Novo parâmetro `--gui-port` para controlar a porta da interface visual.
-- Backend HTTP local para iniciar execuções, validar perfis, encerrar processos ativos e servir manual, projeto e espelho atual.
-- Tela visual com formulário de execução, leitura de estado, resumo do último crawl, logs em tempo real e atalhos rápidos.
-- Testes dedicados para helpers da GUI em `tests/test_gui_server.py`.
-- Capítulo novo do manual em `Manual do Usuário/06 - QuickWiki Studio.md` e `Manual do Usuário/06-gui-studio.html`.
+## 2026-03-28 - Publicacao MIT e alinhamento final de repositorio publico
 
 ### Alterado
 
-- O `run_scraper.py` agora prepara logging também ao abrir a GUI, para manter rastreabilidade consistente.
-- A GUI passou a exibir descrição e seed padrão dos perfis carregados.
-- O preview de comando da interface ficou mais fiel ao ambiente local, inclusive em caminhos com espaços no Windows.
-- O servidor da GUI foi endurecido com validação de payload, cache simples de perfis e proteção de navegação em arquivos servidos localmente.
+- `LICENSE` substituida por MIT para abertura publica coerente com o objetivo de portfolio e reuso comunitario
+- `pyproject.toml` atualizado para declarar licenca MIT no pacote
+- `README.md`, `DOCUMENTACAO_TECNICA.md`, `docs/STATUS.md`, `docs/NEXT_SESSION.md` e `docs/ROADMAP.md` alinhados ao modelo publico sob MIT
+- `CONTRIBUTING.md`, `SECURITY.md` e `SUPPORT.md` ajustados para refletir colaboracao e suporte em repositorio aberto
+- `docs/DECISIONS.md` passou a registrar formalmente a decisao de licenciamento MIT
 
-### Documentação
+### Validado
 
-- `README.md` reestruturado para apresentar a GUI como trilha recomendada de onboarding.
-- `DOCUMENTACAO_TECNICA.md` atualizado para incluir arquitetura e responsabilidade dos módulos da GUI.
-- `Manual do Usuário/index.html` e `Manual do Usuário/README.md` ajustados para destacar o QuickWiki Studio como recurso oficial.
-- `Plan.md` ampliado para refletir a camada visual de operação do produto.
+- `python -m unittest discover -s tests -v`
+- `python -m compileall run_scraper.py quickwiki scraper tests`
+- `python -m build`
+- `python -m twine check dist/*`
+- `python -m pip install .`
+- `python -m quickwiki --list-site-profiles`
+- `python -m quickwiki --validate-site-profiles`
 
-### Testes
+## 2026-03-27 - Packaging hardening e repositorio public-ready
 
-- Validação estrutural com `python -m py_compile run_scraper.py scraper\\gui_server.py scraper\\gui_assets.py tests\\test_gui_server.py`.
-- Suíte local executada com `16/16` testes aprovados.
-- Smoke test da GUI executado com resposta `200` no endpoint `/api/state`.
+### Adicionado
 
-## 2026-03-25 — Rebrand para QuickWiki e melhorias estruturais
+- package `quickwiki/` para `python -m quickwiki`
+- perfis built-in bundled em `scraper/bundled/profiles/`
+- testes para paths, modo instalado e fallback de perfis
+- `CONTRIBUTING.md`
+- `SECURITY.md`
+- `SUPPORT.md`
+- `CODE_OF_CONDUCT.md`
+- template de PR em `.github/PULL_REQUEST_TEMPLATE.md`
+- templates de issue em `.github/ISSUE_TEMPLATE/`
 
 ### Alterado
 
-- A identidade pública do projeto passou de `TibiaWiki Web Scrapper` para `QuickWiki`.
-- O entrypoint `run_scraper.py` agora apresenta o projeto como `QuickWiki` na CLI.
-- O crawler público principal passou a ser `QuickWikiCrawler`, mantendo alias compatível para `TibiaWikiCrawler`.
-- O namespace de logs foi atualizado para `quickwiki.scraper`.
-- O `user_agent` padrão foi atualizado para `QuickWikiBot/1.0`.
-- A interface offline passou a usar títulos e textos de navegação alinhados com a marca `QuickWiki`.
+- `README.md` reestruturado para portfolio publico com screenshots, quickstart e estado de validacao
+- `run_scraper.py` desacoplado do bootstrap pesado em comandos simples e alinhado ao fallback de perfis bundled
+- `QuickWiki Studio` agora dispara o crawler por modulo com `python -m quickwiki`
+- `scraper/paths.py` agora diferencia raiz source-first de workspace padrao
+- `scraper/site_profiles.py` agora suporta melhor perfis bundled, JSON malformado e chaves duplicadas
+- `pyproject.toml` agora inclui package-data de perfis e metadata de licenca coerente com `LICENSE`
+- `docs/README.md`, `docs/STATUS.md` e `docs/RELEASE_CHECKLIST.md` reescritos para a trilha publica atual
+- CI ampliada com build, `twine check` e smoke do modulo instalado fora da raiz do repositorio
 
-### Adicionado
+### Validado
 
-- Comando `--validate-site-profiles` para validar os perfis carregados e encerrar.
-- Validação explícita de payloads de perfis JSON durante o carregamento.
-- Export público de `validate_site_profile_payload` no pacote `scraper`.
-- Compatibilidade retroativa no frontend para `window.TibiaMirrorApp` e no índice legado `window.__TIBIA_WIKI_SEARCH_INDEX__`.
+- `python -m unittest discover -s tests -v`
+- `python -m build`
+- `python -m twine check dist/*`
+- `python -m pip install .`
+- `python -m quickwiki --version`
+- `python -m quickwiki --list-site-profiles`
+- `python -m quickwiki --validate-site-profiles`
+- smoke crawl curto com perfil built-in
 
-### Documentação
+## Historico anterior
 
-- `README.md` atualizado para a identidade `QuickWiki`.
-- `DOCUMENTACAO_TECNICA.md` ajustado para refletir o rebrand e apontar este changelog como fonte canônica.
-- `Plan.md` atualizado para a nova identidade do projeto.
-- `isso que queremos.md` ajustado para nomear o sistema como `QuickWiki`.
-
-### Testes
-
-- Adicionados testes para rejeição de perfis inválidos.
-- Ajustados testes de storage para a nova identidade da interface administrativa.
-- Validação final executada com 11 testes aprovados e com o comando `--validate-site-profiles` concluindo com sucesso.
-
-## 2026-03-25 — Consolidação de documentação técnica
-
-### Adicionado
-
-- Documento técnico consolidado em `DOCUMENTACAO_TECNICA.md`.
-
-### Documentação
-
-- Registrada análise minuciosa da arquitetura, fluxo, módulos, perfis, formatos de saída, riscos e sugestões de melhoria.
-- README ligado à documentação técnica complementar.
-
-### Verificação
-
-- Suíte local executada com sucesso durante a rodada de documentação inicial.
-
-## 2026-03-25 — Manual do Usuário estruturado
-
-### Adicionado
-
-- Pasta `Manual do Usuário` com guias separados por etapa de uso.
-- Índice principal do manual com trilha recomendada de leitura.
-- Instruções passo a passo para instalação, primeiro espelho, perfis, validação, navegação offline e problemas comuns.
-
-### Documentação
-
-- `README.md` atualizado para apontar o manual de usuário como trilha de onboarding prático.
-
-### Verificação
-
-- O estado atual da CLI e da validação de perfis foi revisado antes da escrita do manual, sem bloqueios críticos para uso básico.
-
-## 2026-03-25 — Manual visual refinado
-
-### Alterado
-
-- O diretório físico do projeto foi renomeado de `wiki-web-scrapper` para `QuickWiki`.
-- O `README.md` principal passou a apontar também para a entrada visual do manual.
-
-### Adicionado
-
-- `Manual do Usuário/index.html` como home visual do manual.
-- `Manual do Usuário/manual.css` com uma apresentação mais editorial, responsiva e navegável.
-- Páginas HTML individuais para cada capítulo do manual, com navegação entre etapas.
-
-### Documentação
-
-- O índice markdown do manual foi ajustado para orientar o usuário a abrir primeiro a versão HTML.
+- 2026-03-25 - QuickWiki Studio e trilha visual oficial.
+- 2026-03-25 - Rebrand para QuickWiki e melhorias estruturais.
+- 2026-03-25 - Consolidacao de documentacao tecnica.
+- 2026-03-25 - Manual do usuario estruturado.
+- 2026-03-25 - Manual visual refinado.
